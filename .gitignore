@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.zip
+*.crx
+*.pem
+.env
+.env.*
+.DS_Store
+.taste-skill/chrome-*
+dist-e2e/
+e2e-results/
+release/
+.taste-skill/gate/
+.taste-skill/gate-blocks.json

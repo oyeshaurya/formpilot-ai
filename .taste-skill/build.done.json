@@ -1,0 +1,10 @@
+{
+ "page": null,
+ "dir": "C:\\Users\\shaur\\Documents\\FormPilot AI",
+ "kind": "software",
+ "start": "2026-11-23T13:55:39.078Z",
+ "by": "start.mjs",
+ "url": "http://localhost:5174/",
+ "category": "form auto-filler browser extension",
+ "primary": "Fill this page"
+}

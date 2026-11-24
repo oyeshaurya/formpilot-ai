@@ -1,0 +1,559 @@
+{
+ "start": "2026-11-23T13:55:39.078Z",
+ "round": 2,
+ "idle": 0,
+ "errors": 0,
+ "status": "done",
+ "history": [
+  {
+   "at": "2026-11-23T14:02:27.666Z",
+   "mode": "manual",
+   "status": "fail",
+   "fails": 12,
+   "round": 1,
+   "reused": false,
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-23T14:03:50.228Z",
+   "mode": "hook",
+   "host": "claude",
+   "status": "fail",
+   "fails": 12,
+   "round": 1,
+   "reused": true,
+   "stopHookActive": false,
+   "decision": "block",
+   "reason": "nothing changed since round 1 of 3, and 12 FAILs remain. Finishing again without a fix is blocked 1 more time, then counted as a round:"
+  },
+  {
+   "at": "2026-11-23T14:03:53.592Z",
+   "mode": "hook",
+   "host": "claude",
+   "status": "fail",
+   "fails": 12,
+   "round": 1,
+   "reused": true,
+   "stopHookActive": true,
+   "decision": "allow",
+   "reason": "nothing changed since the last block; this stop is allowed once without a round (a question to the user)"
+  },
+  {
+   "at": "2026-11-23T14:11:29.898Z",
+   "mode": "hook",
+   "host": "claude",
+   "status": "fail",
+   "fails": 12,
+   "round": 2,
+   "reused": false,
+   "stopHookActive": false,
+   "decision": "block",
+   "reason": "round 2 of 3: 12 FAILs remain:"
+  },
+  {
+   "at": "2026-11-23T14:11:32.551Z",
+   "mode": "hook",
+   "host": "claude",
+   "status": "fail",
+   "fails": 12,
+   "round": 2,
+   "reused": true,
+   "stopHookActive": true,
+   "decision": "allow",
+   "reason": "nothing changed since the last block; this stop is allowed once without a round (a question to the user)"
+  },
+  {
+   "at": "2026-11-23T14:11:43.235Z",
+   "mode": "done",
+   "status": "done",
+   "reason": "Close the gate (user, after reviewing the 12 website-only FAILs)",
+   "round": 2
+  },
+  {
+   "at": "2026-11-23T14:11:51.853Z",
+   "mode": "hook",
+   "host": "claude",
+   "decision": "allow",
+   "reason": "no build is active here",
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-23T14:19:26.121Z",
+   "mode": "hook",
+   "host": "claude",
+   "decision": "allow",
+   "reason": "no build is active here",
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-23T14:25:09.647Z",
+   "mode": "hook",
+   "host": "claude",
+   "decision": "allow",
+   "reason": "no build is active here",
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-23T14:49:52.779Z",
+   "mode": "hook",
+   "host": "claude",
+   "decision": "allow",
+   "reason": "no build is active here",
+   "stopHookActive": false
+  }
+ ],
+ "max": 3,
+ "marker": {
+  "page": null,
+  "dir": "C:\\Users\\shaur\\Documents\\FormPilot AI",
+  "kind": "software",
+  "start": "2026-11-23T13:55:39.078Z",
+  "by": "start.mjs",
+  "url": "http://localhost:5174/",
+  "category": "form auto-filler browser extension",
+  "primary": "Fill this page"
+ },
+ "manual": true,
+ "roundKey": "fd0a3aa9f593b783:da39a3ee",
+ "roundFree": false,
+ "idleFree": true,
+ "blockKey": "fd0a3aa9f593b783:da39a3ee",
+ "fp": "fd0a3aa9f593b783",
+ "page": "http://localhost:5174/",
+ "found": {
+  "fails": [
+   {
+    "check": "moment-none",
+    "where": "(the page)",
+    "msg": "a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)",
+    "fix": "deal one (moments.mjs pick --page software) and mount it in its own section",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "moment-none"
+    ],
+    "wheres": [
+     "(the page)"
+    ]
+   },
+   {
+    "check": "hero-screen",
+    "where": "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+    "msg": "the hero ends at 1019px on a 900px screen, 119px below the fold: it ends at the fold, 1px either way (SR-1)",
+    "fix": "make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "hero-screen"
+    ],
+    "wheres": [
+     "div#panel-fill \"Fill the form on this pageFormPilot read\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+    "msg": "the section starts at 117px, 117px below the screen grid (0 x 900px): sections start on whole screens (SR-2)",
+    "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div#panel-fill \"Fill the form on this pageFormPilot read\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+    "msg": "a <div> sits directly in <main>: every part of <main> is a <section> (SR-4)",
+    "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+     "div#panel-fill > div.px-4.py-5 > figure.fp-card.mt-6 \"Full nameAda LovelaceEmailada@example.co\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+    "msg": "the content of section 1 runs 520px from the left and 520px from the right (read from its outermost blocks: no .wrap): the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+    "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#panel-fill \"Fill the form on this pageFormPilot read\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#root \"Skip to contentFormPilotStored on this d\"",
+    "msg": "a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+    "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#root \"Skip to contentFormPilotStored on this d\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "ul.fp-card.mt-4 > li.flex.min-h-14:nth-of-type(1) > div.min-w-0.flex-1 > p.font-medium \"Profile\"",
+    "msg": "5 text blocks start on a left line at x 589, 69px from the container's left: text starts on the container's left, or on one split line (x 697, 732, 767) (also \"Empty. Add at least your name an\", \"Resume\", \"Optional. Improves drafted answe\") (SR-6)",
+    "fix": "start the text on the container's left, or on the one split line every split shares",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "ul.fp-card.mt-4 > li.flex.min-h-14:nth-of-type(1) > div.min-w-0.flex-1 > p.font-medium \"Profile\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.px-4.py-5 > figure.fp-card.mt-6 > div:nth-of-type(1) > p.border-2.bg-bg \"Ada Lovelace\"",
+    "msg": "3 text blocks start on a left line at x 567, 47px from the container's left: text starts on the container's left, or on one split line (x 697, 732, 767) (also \"ada@example.com\", \"I build tools that turn careful \") (SR-6)",
+    "fix": "start the text on the container's left, or on the one split line every split shares",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.px-4.py-5 > figure.fp-card.mt-6 > div:nth-of-type(1) > p.border-2.bg-bg \"Ada Lovelace\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.px-4.py-5 > figure.fp-card.mt-6 > div:nth-of-type(1) > p.mb-1.font-medium \"Full name\"",
+    "msg": "6 text blocks start on a left line at x 555, 35px from the container's left: text starts on the container's left, or on one split line (x 697, 732, 767) (also \"Email\", \"Why do you want to join?\", \"ProfileEmpty. Add at least your \") (and 2 more like it: x 536, \"Fill the form on this pa\") (SR-6)",
+    "fix": "start the text on the container's left, or on the one split line every split shares",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.px-4.py-5 > figure.fp-card.mt-6 > div:nth-of-type(1) > p.mb-1.font-medium \"Full name\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#panel-fill > div.px-4.py-5 > button.fp-btn.fp-btn--primary \"Fill this page\"",
+    "msg": "a box over half the container wide runs 536-904px, not on the container's lines at 520-920px (SR-6)",
+    "fix": "run the picture or box from the container's left line to its right line, or put it in a row or a split",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#panel-fill > div.px-4.py-5 > button.fp-btn.fp-btn--primary \"Fill this page\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#panel-fill > div.px-4.py-5 > figure.fp-card.mt-6 \"Full nameAda LovelaceEmailada@example.co\"",
+    "msg": "a box over half the container wide runs 536-904px, not on the container's lines at 520-920px (and 1 more like it: \"ProfileEmpty. Add at lea\") (SR-6)",
+    "fix": "run the picture or box from the container's left line to its right line, or put it in a row or a split",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#panel-fill > div.px-4.py-5 > figure.fp-card.mt-6 \"Full nameAda LovelaceEmailada@example.co\""
+    ]
+   },
+   {
+    "check": "container",
+    "where": "page",
+    "msg": "no .wrap",
+    "fix": "put the content in one .wrap",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "layout",
+    "ids": [
+     "container"
+    ],
+    "wheres": [
+     "page"
+    ]
+   }
+  ],
+  "warns": [
+   {
+    "check": "copy-buttons",
+    "where": "div#panel-fill > div.px-4.py-5 > button.fp-btn.fp-btn--primary \"Fill this page\"",
+    "msg": "\"Fill this page\" does not start with a verb (book, buy, try, start, get, see...)",
+    "fix": "label buttons with a verb and what the visitor gets (\"Book a room\", \"Start free trial\")",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-length",
+    "where": "div#panel-fill \"Fill the form on this page\"",
+    "msg": "1 section over 90 words a screen outside the UI mocks (\"Fill the form on this pa\" 92); 92 words a screen across the page (92 words in 1 screens): a tech page says it in about 80 or fewer",
+    "fix": "cut every section to its heading, one line and the product UI: the UI says the rest; no second paragraph, no list of feature sentences",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "share-meta",
+    "where": "head",
+    "msg": "the head lacks og:title, og:description, og:image, twitter:card, an icon: a shared link shows no picture or title of its own",
+    "fix": "copy the head block of starter.html: og tags, twitter:card, the icon and theme-color (references/system.md, Head)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   }
+  ],
+  "crashed": [],
+  "seconds": {
+   "consistency": 43,
+   "layout": 13
+  }
+ },
+ "open": [
+  {
+   "check": "moment-none",
+   "where": "(the page)",
+   "msg": "a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)",
+   "fix": "deal one (moments.mjs pick --page software) and mount it in its own section",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "moment-none"
+   ],
+   "wheres": [
+    "(the page)"
+   ]
+  },
+  {
+   "check": "hero-screen",
+   "where": "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+   "msg": "the hero ends at 1019px on a 900px screen, 119px below the fold: it ends at the fold, 1px either way (SR-1)",
+   "fix": "make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "hero-screen"
+   ],
+   "wheres": [
+    "div#panel-fill \"Fill the form on this pageFormPilot read\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+   "msg": "the section starts at 117px, 117px below the screen grid (0 x 900px): sections start on whole screens (SR-2)",
+   "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div#panel-fill \"Fill the form on this pageFormPilot read\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+   "msg": "a <div> sits directly in <main>: every part of <main> is a <section> (SR-4)",
+   "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+    "div#panel-fill > div.px-4.py-5 > figure.fp-card.mt-6 \"Full nameAda LovelaceEmailada@example.co\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#panel-fill \"Fill the form on this pageFormPilot read\"",
+   "msg": "the content of section 1 runs 520px from the left and 520px from the right (read from its outermost blocks: no .wrap): the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+   "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#panel-fill \"Fill the form on this pageFormPilot read\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#root \"Skip to contentFormPilotStored on this d\"",
+   "msg": "a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+   "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#root \"Skip to contentFormPilotStored on this d\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "ul.fp-card.mt-4 > li.flex.min-h-14:nth-of-type(1) > div.min-w-0.flex-1 > p.font-medium \"Profile\"",
+   "msg": "5 text blocks start on a left line at x 589, 69px from the container's left: text starts on the container's left, or on one split line (x 697, 732, 767) (also \"Empty. Add at least your name an\", \"Resume\", \"Optional. Improves drafted answe\") (SR-6)",
+   "fix": "start the text on the container's left, or on the one split line every split shares",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "ul.fp-card.mt-4 > li.flex.min-h-14:nth-of-type(1) > div.min-w-0.flex-1 > p.font-medium \"Profile\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.px-4.py-5 > figure.fp-card.mt-6 > div:nth-of-type(1) > p.border-2.bg-bg \"Ada Lovelace\"",
+   "msg": "3 text blocks start on a left line at x 567, 47px from the container's left: text starts on the container's left, or on one split line (x 697, 732, 767) (also \"ada@example.com\", \"I build tools that turn careful \") (SR-6)",
+   "fix": "start the text on the container's left, or on the one split line every split shares",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.px-4.py-5 > figure.fp-card.mt-6 > div:nth-of-type(1) > p.border-2.bg-bg \"Ada Lovelace\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.px-4.py-5 > figure.fp-card.mt-6 > div:nth-of-type(1) > p.mb-1.font-medium \"Full name\"",
+   "msg": "6 text blocks start on a left line at x 555, 35px from the container's left: text starts on the container's left, or on one split line (x 697, 732, 767) (also \"Email\", \"Why do you want to join?\", \"ProfileEmpty. Add at least your \") (and 2 more like it: x 536, \"Fill the form on this pa\") (SR-6)",
+   "fix": "start the text on the container's left, or on the one split line every split shares",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.px-4.py-5 > figure.fp-card.mt-6 > div:nth-of-type(1) > p.mb-1.font-medium \"Full name\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#panel-fill > div.px-4.py-5 > button.fp-btn.fp-btn--primary \"Fill this page\"",
+   "msg": "a box over half the container wide runs 536-904px, not on the container's lines at 520-920px (SR-6)",
+   "fix": "run the picture or box from the container's left line to its right line, or put it in a row or a split",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#panel-fill > div.px-4.py-5 > button.fp-btn.fp-btn--primary \"Fill this page\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#panel-fill > div.px-4.py-5 > figure.fp-card.mt-6 \"Full nameAda LovelaceEmailada@example.co\"",
+   "msg": "a box over half the container wide runs 536-904px, not on the container's lines at 520-920px (and 1 more like it: \"ProfileEmpty. Add at lea\") (SR-6)",
+   "fix": "run the picture or box from the container's left line to its right line, or put it in a row or a split",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#panel-fill > div.px-4.py-5 > figure.fp-card.mt-6 \"Full nameAda LovelaceEmailada@example.co\""
+   ]
+  },
+  {
+   "check": "container",
+   "where": "page",
+   "msg": "no .wrap",
+   "fix": "put the content in one .wrap",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "layout",
+   "ids": [
+    "container"
+   ],
+   "wheres": [
+    "page"
+   ]
+  }
+ ],
+ "waived": [],
+ "warnCount": 3,
+ "at": "2026-11-23T14:11:43.235Z",
+ "session": "6d849e54-9767-46bb-973c-424fae593689",
+ "doneReason": "Close the gate (user, after reviewing the 12 website-only FAILs)"
+}
