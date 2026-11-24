@@ -98,7 +98,7 @@ describe("Aadhaar (local-only)", () => {
 
 describe("saved-answer matching", () => {
   it("matches a saved question inside a longer label", () => {
-    expect(factScore("T-shirt size", "What is your T-shirt size?")).toBe(1);
+    expect(factScore("CGPA", "What is your CGPA?")).toBe(1);
   });
   it("does not match unrelated questions", () => {
     expect(factScore("Why do you want to join", "Describe your biggest failure")).toBeLessThan(0.6);

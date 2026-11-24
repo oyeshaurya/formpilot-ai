@@ -249,7 +249,7 @@ export function ProfileView({ saved, onDirtyChange }: { saved: Profile; onDirtyC
 
       <Section
         title="Other facts"
-        description="Anything forms ask that is not above: T-shirt size, dietary needs, how you heard about the role."
+        description="Questions applications ask that are not above, saved once and reused: why you want to join, how you heard about us, your CGPA, an ID number."
       >
         {draft.customFacts.length === 0 && <p className="text-[16px] text-muted">No extra facts yet.</p>}
         {draft.customFacts.map((f, i) => (
@@ -259,14 +259,14 @@ export function ProfileView({ saved, onDirtyChange }: { saved: Profile; onDirtyC
               id={fieldDomId(`customFacts.${i}.label`)}
               label="Question or topic"
               value={f.label}
-              placeholder="T-shirt size"
+              placeholder="How did you hear about us?"
               error={errors[`customFacts.${i}.label`]}
               onChange={(v) => {
                 clearError(`customFacts.${i}.label`);
                 setFact(f.id, { label: v });
               }}
             />
-            <TextField label="Answer" value={f.value} placeholder="M" onChange={(v) => setFact(f.id, { value: v })} />
+            <TextField label="Answer" value={f.value} placeholder="A friend referred me" onChange={(v) => setFact(f.id, { value: v })} />
             <div>
               <button type="button" className="fp-link min-h-11 text-left text-[14px] [overflow-wrap:anywhere]" onClick={() => removeFact(f.id)}>
                 Remove{f.label ? ` “${f.label}”` : " this fact"}

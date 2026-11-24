@@ -25,7 +25,7 @@ Run state lives in `chrome.storage.session` under `fp:run:<tabId>` (section 5).
                     "workAuthorization", "needsSponsorship": "yes" | "no" | "",
                     "noticePeriod", "salaryExpectation", "willingToRelocate": "yes" | "no" | "" },
   "education":    { "school", "degree", "fieldOfStudy", "graduationYear" },
-  "customFacts":  [{ "id", "label", "value" }],   // "T-shirt size: M", "Dietary needs: vegetarian"
+  "customFacts":  [{ "id", "label", "value" }],   // "How did you hear about us?: A friend", "CGPA: 8.7"
   "updatedAt":    "ISO date"
 }
 ```

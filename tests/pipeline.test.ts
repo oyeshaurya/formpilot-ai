@@ -72,13 +72,13 @@ describe("request shape", () => {
     p.customFacts = [
       { id: "a", label: "Aadhaar card number", value: "1234 5678 9012" },
       { id: "b", label: "Unlabelled ID", value: "2345-6789-0123" },
-      { id: "c", label: "T-shirt size", value: "M" },
+      { id: "c", label: "CGPA", value: "8.7" },
     ];
     const block = profileBlock(p, emptyResume());
     expect(block).not.toContain("1234 5678 9012");
     expect(block).not.toContain("2345-6789-0123");
     expect(block).not.toMatch(/aadhaar/i);
-    expect(block).toContain("T-shirt size");
+    expect(block).toContain("CGPA");
   });
 
   it("marks page text as untrusted in the rules", () => {
