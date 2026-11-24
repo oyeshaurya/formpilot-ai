@@ -4,7 +4,21 @@ A running record of what was built, changed and decided. Newest entry first.
 
 ---
 
-## 2026-11-24 (latest): toolbar popup, Resume editor, new logo
+## 2026-11-24 (latest): submitted to Microsoft Edge Add-ons
+
+**Why:** you asked to release FormPilot. The Chrome Web Store charges a one-time US$5 developer fee, so Chrome is skipped for now; Edge Add-ons is free.
+
+**Done:**
+- PR 1 (on-device AI, Indian application fields, Glass redesign, popup, logo) merged into `main`.
+- `PRIVACY.md` now covers On-device AI and unsaved drafts; its contact is the repo's Issues page. Published at https://github.com/oyeshaurya/formpilot-ai/blob/main/PRIVACY.md.
+- `release/formpilot-ai-1.0.0.zip` submitted in Partner Center: public in all markets, category Productivity, privacy disclosures (personally identifiable information, authentication information, website content), English listing with logo, promo tile, two screenshots and seven search terms. Status: **In review**.
+- README rewritten around what FormPilot does and where it is available; repository description, website and topics updated.
+
+**Next:** add the Edge Add-ons link to the README once Microsoft approves it. For any later upload, bump `version` in `package.json`.
+
+---
+
+## 2026-11-24: toolbar popup, Resume editor, new logo
 
 **Why:** you asked for three things: clicking the icon in Edge opened FormPilot docked in the side panel while other extensions open a popup window; the Resume view's Import and Save bar overlapped the text; and a better logo.
 
