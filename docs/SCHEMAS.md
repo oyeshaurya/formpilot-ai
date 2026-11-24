@@ -27,7 +27,9 @@ Run state lives in `chrome.storage.session` under `fp:run:<tabId>` (section 5).
                     "workAuthorization", "needsSponsorship": "yes" | "no" | "",
                     "noticePeriod", "salaryExpectation", "willingToRelocate": "yes" | "no" | "" },
   "education":    { "school", "degree", "fieldOfStudy", "graduationYear",
-                    "highestQualification", "grade" },          // grade: CGPA or percentage
+                    "highestQualification", "grade",
+                    "schoolName", "class10Board", "class10Year", "class10Score",
+                    "class12Board", "class12Year", "class12Score" },          // grade: CGPA or percentage
   "customFacts":  [{ "id", "label", "value" }],   // "How did you hear about us?: A friend", "CGPA: 8.7"
   "updatedAt":    "ISO date"
 }

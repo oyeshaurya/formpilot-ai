@@ -58,6 +58,8 @@ export function validateProfile(p: Profile): FieldErrors {
     e["work.yearsExperience"] = "Write years of experience as a number, like 4 or 4.5.";
   if (education.graduationYear && !YEAR.test(education.graduationYear.trim()))
     e["education.graduationYear"] = "Write the graduation year as four digits, like 2024.";
+  for (const [key, label] of [["class10Year", "Class 10"], ["class12Year", "Class 12"]] as const)
+    if (education[key] && !YEAR.test(education[key].trim())) e[`education.${key}`] = `Write the ${label} year as four digits, like 2021.`;
 
   p.customFacts.forEach((f, i) => {
     if (f.value.trim() && !f.label.trim()) e[`customFacts.${i}.label`] = "Name this fact so FormPilot knows when to use it.";

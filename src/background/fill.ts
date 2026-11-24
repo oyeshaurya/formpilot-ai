@@ -159,7 +159,7 @@ async function runFill(
     let response;
     if (ctx.onDevice) {
       // Rules first (exact and instant), then the built-in model only for what the rules could not place.
-      const rules = ruleFill(ctx.profile, requestFields);
+      const rules = ruleFill(ctx.profile, requestFields, ctx.resume);
       const gapIds = new Set(rules.unmapped.filter((u) => ON_DEVICE_GAP.test(u.reason)).map((u) => u.fieldId));
       const gaps = remoteFields.filter((f) => gapIds.has(f.id));
       run.model = ON_DEVICE_MODEL;
@@ -181,7 +181,7 @@ async function runFill(
     } else if (ctx.basic || !remoteFields.length) {
       run.model = ctx.basic ? BASIC_MODEL : run.model ?? BASIC_MODEL;
       await putRun(run);
-      response = ruleFill(ctx.profile, requestFields);
+      response = ruleFill(ctx.profile, requestFields, ctx.resume);
     } else {
       const plan = planModel(ctx.settings, remoteFields);
       run.model = plan.model;
@@ -190,7 +190,7 @@ async function runFill(
       const result = await requestFill({ apiKey: ctx.apiKey, plan, profile: ctx.profile, resume: ctx.resume, page, fields: remoteFields, fetchImpl });
       run.model = result.model;
       run.usage = result.usage;
-      const local = ruleFill(ctx.profile, localFields);
+      const local = ruleFill(ctx.profile, localFields, ctx.resume);
       response = { mappings: [...result.response.mappings, ...local.mappings], unmapped: [...result.response.unmapped, ...local.unmapped] };
     }
 
@@ -270,7 +270,7 @@ async function runFill(
  * middle name) never go to the model.
  */
 const ON_DEVICE_GAP =
-  /No match in your profile|does not write answers|is not one of the options|None of your skills|Not in your profile: (CGPA|graduation|degree|school|field of study|highest|current|years|skills|notice)/;
+  /No match in your profile|does not write answers|is not one of the options|None of your skills|Not in your profile: (Class|school name|CGPA|graduation|degree|school|field of study|highest|current|years|skills|notice)/;
 
 /** Run the built-in model here if the worker has it, otherwise in the open side panel. */
 async function askOnDevice(req: Omit<OnDeviceRequest, "type">): Promise<FillResponse> {

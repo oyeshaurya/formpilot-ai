@@ -63,6 +63,14 @@ export const EducationSchema = z.object({
   highestQualification: str(100),
   /** CGPA or percentage, as the person writes it: "8.9 / 10", "86%". */
   grade: str(40),
+  /** School (Class 10 and 12), asked by most Indian applications. */
+  schoolName: str(200),
+  class10Board: str(100),
+  class10Year: str(10),
+  class10Score: str(40),
+  class12Board: str(100),
+  class12Year: str(10),
+  class12Score: str(40),
 });
 
 export const CustomFactSchema = z.object({

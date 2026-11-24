@@ -142,6 +142,24 @@ const SECTIONS: { group: Group; title: string; description?: string; rows: Field
       [{ group: "education", key: "highestQualification", label: "Highest qualification", choice: "qualification" }],
     ],
   },
+  {
+    group: "education",
+    title: "School (Class 10 and 12)",
+    description: "Asked by most Indian applications. Leave marks empty to use the ones in your resume.",
+    rows: [
+      [{ group: "education", key: "schoolName", label: "School name" }],
+      [{ group: "education", key: "class10Board", label: "Class 10 board", placeholder: "CBSE" }],
+      [
+        { group: "education", key: "class10Year", label: "Class 10 year", inputMode: "numeric", placeholder: "2019" },
+        { group: "education", key: "class10Score", label: "Class 10 marks", placeholder: "92%" },
+      ],
+      [{ group: "education", key: "class12Board", label: "Class 12 board", placeholder: "CBSE" }],
+      [
+        { group: "education", key: "class12Year", label: "Class 12 year", inputMode: "numeric", placeholder: "2021" },
+        { group: "education", key: "class12Score", label: "Class 12 marks", placeholder: "88.5%" },
+      ],
+    ],
+  },
 ];
 
 const fieldDomId = (path: string) => `f-${path.replace(/\./g, "-")}`;

@@ -1,4 +1,4 @@
-import type { FieldMapping, FillResponse, Profile } from "../shared/schema";
+import type { FieldMapping, FillResponse, Profile, Resume } from "../shared/schema";
 import { isLocalOnlyFact, type RequestField } from "./prompt";
 
 /**
@@ -134,7 +134,51 @@ function pickOption(field: RequestField, value: string): string | null {
 
 const isOpenQuestion = (f: RequestField) => f.kind === "textarea" || f.kind === "contenteditable" || /\?/.test(f.label);
 
-export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse {
+/* ───────────── Class 10 and Class 12 ───────────── */
+
+const LEVEL_10 = /\b(class|std\.?|standard)\s*(x|10)\b|\b(10th|ssc|matric\w*|secondary school)\b/i;
+const LEVEL_12 = /\b(class|std\.?|standard)\s*(xii|12)\b|\b(12th|hsc|intermediate|senior secondary|higher secondary)\b/i;
+
+export function schoolLevel(label: string): "10" | "12" | null {
+  if (LEVEL_12.test(label)) return "12";
+  if (LEVEL_10.test(label)) return "10";
+  return null;
+}
+
+/**
+ * Class 10 / 12 marks as a resume states them: "Class X: 95.8%", "12th - 80.6 %", "SSC: 9.2 CGPA".
+ * Only marks are read; a board or a year is never guessed from a resume.
+ */
+export function schoolScoresFromResume(md: string): { "10"?: string; "12"?: string } {
+  const out: { "10"?: string; "12"?: string } = {};
+  const re = /\b(?:class|std\.?|standard)\s*(xii|x|12|10)(?:th)?\b|\b(12th|10th|hsc|ssc)\b/gi;
+  for (const m of md.matchAll(re)) {
+    const tag = (m[1] ?? m[2] ?? "").toLowerCase();
+    const level = /^(xii|12|12th|hsc)$/.test(tag) ? "12" : "10";
+    if (out[level]) continue;
+    const after = md.slice(m.index! + m[0].length, m.index! + m[0].length + 40).split("\n")[0]!;
+    const score = after.match(/^[^\d\n]{0,20}?(\d{1,3}(?:\.\d{1,2})?\s*(?:%|\/\s*10\b|cgpa\b)?)/i)?.[1]?.trim();
+    if (score) out[level] = score;
+  }
+  return out;
+}
+
+function schoolAnswer(profile: Profile, resume: Resume | undefined, level: "10" | "12", label: string) {
+  const e = profile.education;
+  const cls = `Class ${level}`;
+  if (/\bboard\b/i.test(label)) return { value: level === "10" ? e.class10Board : e.class12Board, what: `${cls} board`, fromResume: false };
+  if (/\b(percent\w*|c?gpa|marks|score|grade|aggregate|result)\b|%/i.test(label)) {
+    const saved = level === "10" ? e.class10Score : e.class12Score;
+    if (saved) return { value: saved, what: `${cls} marks`, fromResume: false };
+    const fromResume = resume ? schoolScoresFromResume(resume.markdown)[level] : undefined;
+    return { value: fromResume ?? "", what: `${cls} marks`, fromResume: !!fromResume };
+  }
+  if (/\b(year|passing|passed|completion)\b/i.test(label)) return { value: level === "10" ? e.class10Year : e.class12Year, what: `${cls} year of passing`, fromResume: false };
+  if (/\b(school|institut\w*|name)\b/i.test(label)) return { value: e.schoolName, what: "school name", fromResume: false };
+  return null;
+}
+
+export function ruleFill(profile: Profile, fields: RequestField[], resume?: Resume): FillResponse {
   const mappings: FieldMapping[] = [];
   const unmapped: FillResponse["unmapped"] = [];
   const map = (f: RequestField, value: string, confidence: FieldMapping["confidence"], why: string) =>
@@ -204,6 +248,24 @@ export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse
     const addressBox = f.kind === "textarea" && /\b(address|house|street|flat|locality)\b/i.test(label) && !/\b(if different|correspondence|previous|other)\b|\?/i.test(label);
     if (isOpenQuestion(f) && !addressBox && f.kind !== "select" && f.kind !== "radio-group") {
       unmapped.push({ fieldId: f.id, reason: "Basic mode does not write answers. Write it yourself, or save one in Profile → Other facts." });
+      continue;
+    }
+
+    // 3b · Class 10 / Class 12 questions: their own profile fields, then marks from the resume
+    const level = schoolLevel(label);
+    if (level) {
+      const a = schoolAnswer(profile, resume, level, label);
+      if (!a) unmapped.push({ fieldId: f.id, reason: "No match in your profile" });
+      else if (!a.value) unmapped.push({ fieldId: f.id, reason: `Not in your profile: ${a.what}. Add it in Profile → School` });
+      else
+        mappings.push({
+          fieldId: f.id,
+          value: f.options?.length ? (pickOption(f, a.value) ?? a.value) : a.value,
+          values: [],
+          source: "profile",
+          confidence: a.fromResume ? "medium" : "high",
+          reasoning: a.fromResume ? `From your resume: ${a.what}` : `From your profile: ${a.what}`,
+        });
       continue;
     }
 

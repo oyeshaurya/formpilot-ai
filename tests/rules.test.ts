@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { factScore, ruleFill } from "../src/background/rules";
+import { factScore, ruleFill, schoolScoresFromResume } from "../src/background/rules";
 import type { RequestField } from "../src/background/prompt";
 import { emptyProfile } from "../src/shared/schema";
 
@@ -127,7 +127,7 @@ describe("one fact per field", () => {
   });
   it("uses CGPA for the degree but not for Class 10 marks", () => {
     expect(value(f("g", "CGPA / Percentage"))).toBe("8.9");
-    expect(value(f("c", "Class 10: Percentage / CGPA"))).toMatch(/^unmapped: School marks/);
+    expect(value(f("c", "Class 10: Percentage / CGPA"))).toMatch(/^unmapped: Not in your profile: Class 10 marks/);
   });
   it("infers highest qualification from the degree when not set", () => expect(value(f("h", "Highest qualification"))).toBe("B.Tech"));
   it("keeps the bare-name rule off other names", () => {
@@ -181,5 +181,30 @@ describe("Indian address forms", () => {
   it("fills a multi-line street box, but not 'if different'", () => {
     expect(value(f("s", "House no. / Street / Locality", { kind: "textarea" }))).toBe("G101, G block, Abode Valley");
     expect(value(f("c", "Correspondence address (if different)", { kind: "textarea" }))).toBeUndefined();
+  });
+});
+
+describe("Class 10 and Class 12", () => {
+  const resume = { markdown: "## Education\nDelhi Public School, Greater Noida 2021 - 2023\nClass X: 95.8%\nClass XII: 80.6%", updatedAt: "" };
+  const value = (label: string, p = profile()) => {
+    const r = ruleFill(p, [f("x", label)], resume);
+    return r.mappings[0] ? `${r.mappings[0].value} (${r.mappings[0].reasoning})` : `unmapped: ${r.unmapped[0]?.reason}`;
+  };
+  it("reads marks from the resume when the profile has none", () => {
+    expect(schoolScoresFromResume(resume.markdown)).toEqual({ "10": "95.8%", "12": "80.6%" });
+    expect(value("Class 10: Percentage / CGPA")).toBe("95.8% (From your resume: Class 10 marks)");
+    expect(value("12th percentage")).toBe("80.6% (From your resume: Class 12 marks)");
+  });
+  it("prefers the profile, and never guesses a board or year from the resume", () => {
+    const p = profile();
+    p.education.class10Board = "CBSE";
+    p.education.class12Score = "81%";
+    expect(value("Class 10: Board name", p)).toBe("CBSE (From your profile: Class 10 board)");
+    expect(value("Class 12: Percentage / CGPA", p)).toBe("81% (From your profile: Class 12 marks)");
+    expect(value("Class 12: Year of passing", p)).toMatch(/^unmapped: Not in your profile: Class 12 year of passing/);
+  });
+  it("reads other ways resumes write it", () => {
+    expect(schoolScoresFromResume("SSC - 9.2 CGPA\nHSC: 88 %")).toEqual({ "10": "9.2 CGPA", "12": "88 %" });
+    expect(schoolScoresFromResume("10th (CBSE): 91%\n12th (CBSE): 85.4%")).toEqual({ "10": "91%", "12": "85.4%" });
   });
 });
