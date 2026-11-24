@@ -1,6 +1,6 @@
 # FormPilot AI privacy policy
 
-Last updated: 23 November 2026
+Last updated: 25 November 2026
 
 FormPilot AI ("FormPilot", "the extension") fills web forms from information you keep in the extension. This policy says what it handles, where it goes, and how to delete it.
 
@@ -12,12 +12,15 @@ Everything FormPilot stores stays in your browser's extension storage on your de
 - **Your resume or bio:** the text you paste, or that FormPilot extracts from a PDF or Word file you import. Files are read on your device and never uploaded; only the extracted text is kept.
 - **Your settings:** model choice and display preferences.
 - **Your Anthropic API key:** by default only until you close the browser; on your device if you choose "On this device". It is stored apart from your profile and is never included in exports.
+- **Unsaved edits:** while you edit your profile or resume, the unsaved changes are kept in the browser's memory so that closing the FormPilot popup does not lose them. They are removed when you save, when you close the browser, or with Delete all data.
 
 FormPilot has no account system, no analytics, no advertising and no server of its own. The developer never receives your data.
 
 ## What leaves your device, and when
 
 In **Basic mode** (no API key, or "Free: Basic" chosen in Settings) nothing leaves your device at all: fields are matched by rules inside the extension.
+
+In **On-device AI mode** ("Free: On-device AI" in Settings) nothing leaves your device either. Fields the rules could not fill are answered by the AI model built into your browser, which runs on your computer. FormPilot sends your details to no server. The first time you choose Download model, your browser downloads that model from its maker (Google for Chrome, Microsoft for Edge) under the browser's own terms; FormPilot does not host or receive it.
 
 With an API key, only when you ask FormPilot to fill a page (the Fill button, the keyboard shortcut or the right-click menu), it sends one request **directly from your browser to Anthropic's API** (`api.anthropic.com`) using your own API key. That request contains:
 
@@ -51,4 +54,4 @@ If this policy changes, the new version will be published at the same address wi
 
 ## Contact
 
-Questions about this policy: [add your contact email or support page before publishing].
+Questions about this policy: open an issue at https://github.com/oyeshaurya/formpilot-ai/issues.
