@@ -163,3 +163,23 @@ describe("Aadhaar fact names", () => {
   });
   it("matches Aadhaar card to Aadhaar number for ordinary facts too", () => expect(factScore("Aadhaar Card", "Aadhaar number")).toBe(1));
 });
+
+describe("Indian address forms", () => {
+  const p = () => {
+    const x = profile();
+    x.address.street = "G101, G block, Abode Valley";
+    x.address.district = "Chengalpattu";
+    x.address.postalCode = "603203";
+    return x;
+  };
+  const value = (field: RequestField) => ruleFill(p(), [field]).mappings[0]?.value;
+  it("fills district and PIN code", () => {
+    expect(value(f("d", "District"))).toBe("Chengalpattu");
+    expect(value(f("p", "PIN code"))).toBe("603203");
+    expect(value(f("p2", "Pincode"))).toBe("603203");
+  });
+  it("fills a multi-line street box, but not 'if different'", () => {
+    expect(value(f("s", "House no. / Street / Locality", { kind: "textarea" }))).toBe("G101, G block, Abode Valley");
+    expect(value(f("c", "Correspondence address (if different)", { kind: "textarea" }))).toBeUndefined();
+  });
+});

@@ -61,6 +61,7 @@ const LABELS: [RegExp, Get, string][] = [
   [/\bportfolio\b/i, (p) => p.links.portfolio || p.links.website, "portfolio"],
   [/\b(personal\s*)?(website|homepage|blog|url)\b/i, (p) => p.links.website || p.links.portfolio, "website"],
   [/\b(street|address line|address 1|mailing address)\b|^address$/i, (p) => p.address.street, "street address"],
+  [/\bdistrict\b/i, (p) => p.address.district, "district"],
   [/\b(city|town|locality)\b/i, (p) => p.address.city, "city"],
   [/\b(state|province|region|county)\b/i, (p) => p.address.region, "state or region"],
   [/\b(zip|postal|post)\s*code\b|\bpostcode\b|\bpin\s*code\b/i, (p) => p.address.postalCode, "postal code"],
@@ -199,7 +200,9 @@ export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse
     }
 
     // Open questions with no saved answer: Basic mode never writes text.
-    if (isOpenQuestion(f) && f.kind !== "select" && f.kind !== "radio-group") {
+    // A multi-line "House no. / Street / Locality" box is your address, not an essay.
+    const addressBox = f.kind === "textarea" && /\b(address|house|street|flat|locality)\b/i.test(label) && !/\b(if different|correspondence|previous|other)\b|\?/i.test(label);
+    if (isOpenQuestion(f) && !addressBox && f.kind !== "select" && f.kind !== "radio-group") {
       unmapped.push({ fieldId: f.id, reason: "Basic mode does not write answers. Write it yourself, or save one in Profile → Other facts." });
       continue;
     }

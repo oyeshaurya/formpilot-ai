@@ -76,8 +76,9 @@ const SECTIONS: { group: Group; title: string; description?: string; rows: Field
       [{ group: "address", key: "street", label: "Street address", autoComplete: "street-address" }],
       [
         { group: "address", key: "city", label: "City", autoComplete: "address-level2" },
-        { group: "address", key: "region", label: "State or region", autoComplete: "address-level1" },
+        { group: "address", key: "district", label: "District", autoComplete: "off" },
       ],
+      [{ group: "address", key: "region", label: "State or region", autoComplete: "address-level1" }],
       [
         { group: "address", key: "postalCode", label: "Postal code", autoComplete: "postal-code" },
         { group: "address", key: "country", label: "Country", autoComplete: "country-name" },

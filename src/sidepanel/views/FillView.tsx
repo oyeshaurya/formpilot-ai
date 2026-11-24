@@ -55,7 +55,8 @@ export function FillView({
   const words = countWords(resume.markdown);
   const hasData = (filled > 0 || words > 0 || profile.customFacts.length > 0);
   // Without a key (or with Basic chosen) FormPilot still fills facts for free with Basic mode.
-  const basic = !hasApiKey || settings.model === "basic";
+  const onDevice = settings.model === "on-device";
+  const basic = settings.model === "basic" || (!hasApiKey && !onDevice);
   const ready = hasData;
   const running = run?.status === "reading" || run?.status === "drafting" || run?.status === "filling";
   const problem: Problem | null = startProblem ?? (run?.status === "error" && run.error ? { kind: run.error.kind, message: run.error.message } : null);
@@ -114,7 +115,7 @@ export function FillView({
           <p id="fill-note" className="mt-2 text-[14px] text-ink">
             {ready ? (
               <>
-                {basic ? "Basic mode: fills facts from your profile, free and offline. " : ""}Nothing is submitted.{" "}
+                {onDevice ? "On-device AI: free, nothing leaves this device. " : basic ? "Basic mode: fills facts from your profile, free and offline. " : ""}Nothing is submitted.{" "}
                 {key && <>Shortcut: {key}, or right-click a field.</>}
               </>
             ) : (
@@ -159,7 +160,7 @@ export function FillView({
               ok
               partial={false}
               title="Model"
-              detail={hasApiKey ? modelInfo(settings.model).label : "Free: Basic (no AI) until you add a key"}
+              detail={hasApiKey || onDevice ? modelInfo(settings.model).label : "Free: Basic (no AI) until you add a key"}
               action={<LinkButton what="model" onClick={() => goTo("settings")}>Change</LinkButton>}
             />
           </ul>
@@ -174,7 +175,7 @@ export function FillView({
 function Progress({ run }: { run: RunState }) {
   const steps: { id: RunState["status"]; label: string }[] = [
     { id: "reading", label: run.fieldCount ? `Read ${run.fieldCount} fields on the page` : "Reading the page" },
-    { id: "drafting", label: run.model === "basic" ? "Matching fields to your profile" : `Drafting answers with ${modelLabel(run.model)}` },
+    { id: "drafting", label: run.model === "basic" ? "Matching fields to your profile" : run.model === "on-device" ? "Matching fields on this device" : `Drafting answers with ${modelLabel(run.model)}` },
     { id: "filling", label: "Filling the fields" },
   ];
   const at = steps.findIndex((s) => s.id === run.status);
@@ -209,7 +210,11 @@ function Progress({ run }: { run: RunState }) {
           );
         })}
       </ol>
-      {run.status === "drafting" && run.model !== "basic" && <p className="mt-4 text-[14px] text-muted">This usually takes 5 to 20 seconds.</p>}
+      {run.status === "drafting" && run.model !== "basic" && (
+        <p className="mt-4 text-[14px] text-muted">
+          {run.model === "on-device" ? "The model runs on your computer. A long form can take a minute." : "This usually takes 5 to 20 seconds."}
+        </p>
+      )}
     </div>
   );
 }
@@ -306,6 +311,11 @@ function Review({ run, tabId }: { run: RunState; tabId: number }) {
         <RingStat value={drafts} total={Math.max(filled.length, 1)} label="To check" colour="var(--warn)" />
         <RingStat value={left} total={filled.length + left} label="Left for you" colour="var(--accent-2)" />
       </div>
+      {run.notice && (
+        <p className="mt-3 text-[14px] text-warn" role="note">
+          {run.notice}
+        </p>
+      )}
       <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" className="fp-btn fp-btn--secondary" disabled={busy || !filled.length} onClick={() => void undoAll()}>
           {busy ? "Undoing…" : "Undo all"}

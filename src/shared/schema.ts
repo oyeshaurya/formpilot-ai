@@ -30,6 +30,7 @@ export const PersonalSchema = z.object({
 export const AddressSchema = z.object({
   street: str(200),
   city: str(100),
+  district: str(100),
   region: str(100),
   postalCode: str(20),
   country: str(100),
@@ -89,7 +90,7 @@ export const ResumeSchema = z.object({
 });
 export type Resume = z.infer<typeof ResumeSchema>;
 
-export const ModelChoiceSchema = z.enum(["auto", "basic", "fast", "balanced", "best", "sonnet-4-6"]);
+export const ModelChoiceSchema = z.enum(["auto", "basic", "on-device", "fast", "balanced", "best", "sonnet-4-6"]);
 export type ModelChoice = z.infer<typeof ModelChoiceSchema>;
 
 export const SettingsSchema = z.object({

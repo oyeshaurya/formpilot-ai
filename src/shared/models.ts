@@ -21,6 +21,12 @@ export const MODELS: readonly ModelInfo[] = [
     id: "basic",
     detail: "Fills facts from your profile with rules. Writes no answers. Free, works offline, nothing leaves this device.",
   },
+  {
+    choice: "on-device",
+    label: "Free: On-device AI",
+    id: "on-device",
+    detail: "Chrome's built-in model reads fields Basic mode misses. Free, no key, nothing leaves this device. Needs a one-time download.",
+  },
   { choice: "fast", label: "Fast: Haiku 5.5", id: "claude-haiku-5-5", detail: "Quickest and cheapest. Contact and sign-up forms." },
   {
     choice: "balanced",
@@ -39,6 +45,8 @@ export const MODELS: readonly ModelInfo[] = [
 
 /** Run-state model id for the rule-based, no-AI fill. */
 export const BASIC_MODEL = "basic";
+/** Run-state model id for the browser's built-in model. */
+export const ON_DEVICE_MODEL = "on-device";
 
 export const AUTO_SIMPLE_MODEL = "claude-haiku-5-5";
 export const AUTO_COMPLEX_MODEL = "claude-sonnet-5-5";

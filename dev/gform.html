@@ -51,6 +51,10 @@
         <input type="text" id="phone" aria-labelledby="h-phone" /></div>
       <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-alt">Alternate phone number</div>
         <input type="text" id="alt" aria-labelledby="h-alt" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-district">District <span aria-label="Required question">*</span></div>
+        <input type="text" id="district" aria-labelledby="h-district" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-pin">PIN code <span aria-label="Required question">*</span></div>
+        <input type="text" id="pin" aria-labelledby="h-pin" /></div>
       <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-country">Country</div>
         <div role="listbox" id="country" class="closed" aria-labelledby="h-country" aria-expanded="false">
           <div role="option" data-value="" aria-selected="true">Choose</div>
@@ -82,6 +86,10 @@
         <input type="text" id="focc" aria-labelledby="h-focc" /></div>
       <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-aad">Aadhaar number <span aria-label="Required question">*</span></div>
         <input type="text" id="aad" aria-labelledby="h-aad" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-role">Current role</div>
+        <input type="text" id="role" aria-labelledby="h-role" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-native">Native place</div>
+        <input type="text" id="native" aria-labelledby="h-native" /></div>
       <div role="listitem" class="q"><div role="heading" aria-level="3">Declaration</div>
         <div role="list"><div role="listitem"><label><div role="checkbox" id="decl" aria-checked="false" aria-label="I confirm that the information provided is true and complete." data-answer-value="I confirm that the information provided is true and complete."></div> I confirm that the information provided is true and complete.</label></div></div></div>
     </div>
@@ -116,7 +124,7 @@
       });
       window.gformState = () => ({
         first: first.value, middle: middle.value, last: last.value, dob: dob.value, phone: phone.value, alt: alt.value,
-        cgpa: cgpa.value, aad: aad.value, c10: c10.value, father: father.value, focc: focc.value,
+        cgpa: cgpa.value, aad: aad.value, district: district.value, pin: pin.value, role: role.value, native: native.value, c10: c10.value, father: father.value, focc: focc.value,
         gender: document.querySelector("#gender [aria-checked=true]")?.getAttribute("data-value") ?? "",
         nat: nat.querySelector(":scope > [aria-selected=true]").getAttribute("data-value"),
         country: country.querySelector(":scope > [aria-selected=true]").getAttribute("data-value"),

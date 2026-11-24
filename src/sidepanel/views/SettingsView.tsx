@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { sendToWorker } from "../../shared/messages";
 import { MODELS } from "../../shared/models";
+import { downloadOnDeviceModel, onDeviceStatus, type OnDeviceStatus } from "../../shared/ondevice";
 import { VaultExportSchema, type Profile, type Resume, type Settings, type VaultExport } from "../../shared/schema";
 import { clearApiKey, getApiKey, saveProfile, saveResume, saveSettings, setApiKey, wipeAll } from "../../shared/storage";
 import { apiKeyProblem } from "../../shared/validate";
@@ -206,7 +207,7 @@ function ModelSection({ settings }: { settings: Settings }) {
     setLine({ tone: "ok", text: "Model saved." });
   }
   return (
-    <Section title="Model" description="Which Claude model drafts your answers. You pay Anthropic per use with your key.">
+    <Section title="Model" description="What fills your forms. The two free options need no key; Claude models use your Anthropic key and you pay per use.">
       <fieldset>
         <legend className="sr-only">Model</legend>
         {MODELS.map((m) => (
@@ -220,8 +221,69 @@ function ModelSection({ settings }: { settings: Settings }) {
           />
         ))}
       </fieldset>
+      {settings.model === "on-device" && <OnDeviceSetup />}
       <StatusLine tone={line?.tone}>{line?.text}</StatusLine>
     </Section>
+  );
+}
+
+/** Whether the browser's built-in model can run here, and a button to download it. */
+function OnDeviceSetup() {
+  const [status, setStatus] = useState<OnDeviceStatus | "checking">("checking");
+  const [progress, setProgress] = useState<number | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    void onDeviceStatus().then(setStatus);
+  }, []);
+
+  // Runs straight from the click: the browser only starts the download inside a user gesture.
+  async function download() {
+    setError("");
+    setProgress(0);
+    try {
+      await downloadOnDeviceModel((f) => setProgress(f));
+      setStatus(await onDeviceStatus());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "The download did not start. Check your connection and free disk space, then try again.");
+    } finally {
+      setProgress(null);
+    }
+  }
+
+  const text: Record<OnDeviceStatus | "checking", string> = {
+    checking: "Checking this browser…",
+    available: "Ready. The model is on this device.",
+    downloadable: "Download the model once. It is several gigabytes and Chrome needs 22 GB free. After that it works offline.",
+    downloading: "The model is downloading. Keep the browser open.",
+    unavailable: "The built-in model cannot run here. Chrome needs 16 GB RAM or a GPU with more than 4 GB, and 22 GB free disk. Until then FormPilot uses Basic mode.",
+    unsupported: "This browser has no built-in AI. Use Chrome 138 or newer on Windows, macOS or Linux. Until then FormPilot uses Basic mode.",
+  };
+  return (
+    <div className="fp-inset mt-3 grid gap-3 p-4" aria-live="polite">
+      <p className="text-[14px] text-ink">
+        {progress !== null ? `Downloading… ${Math.round(progress * 100)}%` : text[status]}
+      </p>
+      {progress !== null && (
+        <div
+          className="h-2 overflow-hidden rounded-full bg-sunken"
+          role="progressbar"
+          aria-label="Model download"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress * 100)}
+        >
+          <div className="h-full rounded-full bg-[var(--action)] transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${Math.round(progress * 100)}%` }} />
+        </div>
+      )}
+      {(status === "downloadable" || status === "downloading") && progress === null && (
+        <div>
+          <button type="button" className="fp-btn fp-btn--secondary" onClick={() => void download()}>
+            {status === "downloading" ? "Check download" : "Download model"}
+          </button>
+        </div>
+      )}
+      {error && <p className="text-[14px] text-danger">{error}</p>}
+    </div>
   );
 }
 

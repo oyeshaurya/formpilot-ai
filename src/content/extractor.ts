@@ -20,7 +20,7 @@ const clean = (s: string | null | undefined, max = MAX_TEXT) =>
 
 const SENSITIVE_AUTOCOMPLETE = /^(cc-|current-password|new-password|one-time-code)/i;
 const SENSITIVE_WORDS =
-  /\b(card ?number|credit ?card|debit ?card|cvv|cvc|csc|security code|expir(y|ation) date|iban|swift|routing|account ?number|sort ?code|ssn|social security|national insurance|passport|tax ?id|pan ?card|driver'?s? licen[cs]e|password|passcode|pin ?code|otp|one[- ]time|verification code|csrf|xsrf|token|nonce|captcha|recaptcha|honeypot)\b/i;
+  /\b(card ?number|credit ?card|debit ?card|cvv|cvc|csc|security code|expir(y|ation) date|iban|swift|routing|account ?number|sort ?code|ssn|social security|national insurance|passport|tax ?id|pan ?card|driver'?s? licen[cs]e|password|passcode|(atm|upi|card|secret|security|login|transaction) ?pin|m-?pin|otp|one[- ]time|verification code|csrf|xsrf|token|nonce|captcha|recaptcha|honeypot)\b/i;
 const SKIP_INPUT_TYPES = new Set(["hidden", "password", "file", "submit", "button", "reset", "image", "range", "color", "search"]);
 
 export function isSensitive(el: Element, label: string): boolean {
