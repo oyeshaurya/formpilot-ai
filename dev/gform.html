@@ -80,6 +80,8 @@
         <input type="text" id="father" aria-labelledby="h-father" /></div>
       <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-focc">Father's occupation</div>
         <input type="text" id="focc" aria-labelledby="h-focc" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-aad">Aadhaar number <span aria-label="Required question">*</span></div>
+        <input type="text" id="aad" aria-labelledby="h-aad" /></div>
       <div role="listitem" class="q"><div role="heading" aria-level="3">Declaration</div>
         <div role="list"><div role="listitem"><label><div role="checkbox" id="decl" aria-checked="false" aria-label="I confirm that the information provided is true and complete." data-answer-value="I confirm that the information provided is true and complete."></div> I confirm that the information provided is true and complete.</label></div></div></div>
     </div>
@@ -114,7 +116,7 @@
       });
       window.gformState = () => ({
         first: first.value, middle: middle.value, last: last.value, dob: dob.value, phone: phone.value, alt: alt.value,
-        cgpa: cgpa.value, c10: c10.value, father: father.value, focc: focc.value,
+        cgpa: cgpa.value, aad: aad.value, c10: c10.value, father: father.value, focc: focc.value,
         gender: document.querySelector("#gender [aria-checked=true]")?.getAttribute("data-value") ?? "",
         nat: nat.querySelector(":scope > [aria-selected=true]").getAttribute("data-value"),
         country: country.querySelector(":scope > [aria-selected=true]").getAttribute("data-value"),

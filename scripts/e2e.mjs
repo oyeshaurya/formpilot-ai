@@ -284,7 +284,7 @@ try {
       address: { country: "India" }, links: {},
       work: { skills: "TypeScript, Python, React" },
       education: { degree: "B.Tech", highestQualification: "Bachelor's degree", grade: "8.9" },
-      customFacts: [] } })`,
+      customFacts: [{ id: "aad", label: "Aadhaar Card", value: "538942581375" }] } })`,
   );
   const gform = await open(`http://localhost:${PORT}/gform.html`);
   await wait(1200);
@@ -306,6 +306,7 @@ try {
   check("GF: Class 10 marks not given the degree CGPA", g.c10 === "", g.c10);
   check("GF: father's name, not his occupation", g.father === "Rakesh Verma" && g.focc === "", `${g.father} / ${g.focc}`);
   check("GF: declaration left for you", g.decl === false);
+  check("GF: Aadhaar from a fact named Aadhaar Card", g.aad === "538942581375", g.aad);
   await shot(gform.session, "5-google-form.png");
   await evaluate(panel.session, `chrome.runtime.sendMessage({ type: "UNDO", tabId: ${gTab} })`);
   await wait(2500);

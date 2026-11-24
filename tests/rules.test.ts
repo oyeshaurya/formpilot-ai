@@ -145,3 +145,21 @@ describe("one fact per field", () => {
     expect(r.mappings[0]!.values).toEqual(["JavaScript / TypeScript"]);
   });
 });
+
+describe("Aadhaar fact names", () => {
+  const field: RequestField = { id: "a", kind: "text", label: "Aadhaar number", required: true, localOnly: true };
+  for (const label of ["Aadhaar Card", "Aadhar", "UID", "My ID"]) {
+    it(`fills from a fact named “${label}”`, () => {
+      const p = profile();
+      p.customFacts.push({ id: "x", label, value: "538942581375" });
+      expect(ruleFill(p, [field]).mappings[0]?.value).toBe("538942581375");
+    });
+  }
+  it("never uses a non-Aadhaar fact for it", () => {
+    const p = profile();
+    p.customFacts.push({ id: "x", label: "Aadhaar Card", value: "not a number" });
+    p.customFacts = p.customFacts.filter((x) => x.id !== "x").concat({ id: "y", label: "PAN", value: "ABCDE1234F" });
+    expect(ruleFill(p, [field]).mappings).toHaveLength(0);
+  });
+  it("matches Aadhaar card to Aadhaar number for ordinary facts too", () => expect(factScore("Aadhaar Card", "Aadhaar number")).toBe(1));
+});

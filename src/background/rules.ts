@@ -1,5 +1,5 @@
 import type { FieldMapping, FillResponse, Profile } from "../shared/schema";
-import type { RequestField } from "./prompt";
+import { isLocalOnlyFact, type RequestField } from "./prompt";
 
 /**
  * Basic mode: a free, offline fill with no AI. Maps fields to the profile with
@@ -97,7 +97,8 @@ const NOT_ABOUT_YOU =
   /\b(emergency|reference|referee|referr\w*|spouse|partner'?s|parent|guardian|father|mother|manager|supervisor|recruiter|billing|shipping|card ?holder)\b/i;
 const NOT_RESIDENCE = /\b(birth|citizen\w*|nationality|passport|issu\w*|origin)\b/i;
 
-const STOP = new Set(["the", "you", "your", "are", "for", "and", "what", "how", "with", "this", "that", "please", "our", "have", "why", "who", "did", "does"]);
+// "card", "number" and "enter" say how an ID is asked for, not which one: "Aadhaar card" = "Aadhaar number".
+const STOP = new Set(["the", "you", "your", "are", "for", "and", "what", "how", "with", "this", "that", "please", "our", "have", "why", "who", "did", "does", "card", "number", "enter"]);
 const words = (s: string) =>
   new Set(
     s
@@ -143,9 +144,10 @@ export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse
     const about = `${label} ${f.name ?? ""}`;
 
     // 1 · a saved answer whose question matches: the only way Basic mode answers open questions
-    const fact = profile.customFacts
-      .filter((x) => x.label.trim() && x.value.trim())
-      .map((x) => ({ x, score: factScore(x.label, label) }))
+    // An Aadhaar field takes your saved Aadhaar fact whatever you named it ("Aadhaar card", "UID", or just the 12 digits).
+    const candidates = profile.customFacts.filter((x) => x.label.trim() && x.value.trim() && (!f.localOnly || isLocalOnlyFact(x.label, x.value)));
+    const fact = candidates
+      .map((x) => ({ x, score: f.localOnly ? Math.max(0.9, factScore(x.label, label)) : factScore(x.label, label) }))
       .sort((a, b) => b.score - a.score)[0];
     if (fact && fact.score >= 0.6) {
       const v = f.options?.length ? pickOption(f, fact.x.value) : fact.x.value;
