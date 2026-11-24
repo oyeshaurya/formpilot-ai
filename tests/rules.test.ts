@@ -104,3 +104,44 @@ describe("saved-answer matching", () => {
     expect(factScore("Why do you want to join", "Describe your biggest failure")).toBeLessThan(0.6);
   });
 });
+
+describe("one fact per field", () => {
+  const p = () => {
+    const x = profile();
+    x.personal.dateOfBirth = "2004-05-17";
+    x.personal.fatherName = "Rakesh Verma";
+    x.education.degree = "B.Tech";
+    x.education.grade = "8.9";
+    return x;
+  };
+  const value = (field: RequestField) => {
+    const r = ruleFill(p(), [field]);
+    return r.mappings[0]?.value ?? `unmapped: ${r.unmapped[0]?.reason}`;
+  };
+  it("never puts a full name in Middle name", () => expect(value(f("m", "Middle name"))).toMatch(/^unmapped: Not in your profile: middle name/));
+  it("never copies the main phone into Alternate phone", () => expect(value(f("a", "Alternate phone number"))).toMatch(/^unmapped/));
+  it("fills date of birth and father's name", () => {
+    expect(value(f("d", "Date of birth", { kind: "date" }))).toBe("2004-05-17");
+    expect(value(f("fa", "Father's name"))).toBe("Rakesh Verma");
+    expect(value(f("fo", "Father's occupation"))).toMatch(/^unmapped/);
+  });
+  it("uses CGPA for the degree but not for Class 10 marks", () => {
+    expect(value(f("g", "CGPA / Percentage"))).toBe("8.9");
+    expect(value(f("c", "Class 10: Percentage / CGPA"))).toMatch(/^unmapped: School marks/);
+  });
+  it("infers highest qualification from the degree when not set", () => expect(value(f("h", "Highest qualification"))).toBe("B.Tech"));
+  it("keeps the bare-name rule off other names", () => {
+    expect(value(f("n", "Full name"))).toBe("Shaurya Verma");
+    expect(value(f("b", "Class 10: Board name"))).toMatch(/^unmapped/);
+    expect(value(f("e", "Name of current employer"))).not.toBe("Shaurya Verma");
+  });
+  it("ticks a combined option when either skill is yours", () => {
+    const r = ruleFill(p(), [
+      f("s", "Which languages and tools are you comfortable with?", {
+        kind: "checkbox-group",
+        options: ["JavaScript / TypeScript", "Java", "Node.js"].map((v) => ({ value: v, label: v })),
+      }),
+    ]);
+    expect(r.mappings[0]!.values).toEqual(["JavaScript / TypeScript"]);
+  });
+});

@@ -36,6 +36,13 @@ export function validateProfile(p: Profile): FieldErrors {
     e["personal.email"] = "Write an email address with an @, like name@example.com.";
   if (personal.phone && !PHONE.test(personal.phone.trim()))
     e["personal.phone"] = "Write the phone number with digits only, optionally starting with +.";
+  if (personal.alternatePhone && !PHONE.test(personal.alternatePhone.trim()))
+    e["personal.alternatePhone"] = "Write the alternate phone number with digits only, optionally starting with +.";
+  if (personal.dateOfBirth) {
+    const t = Date.parse(personal.dateOfBirth);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(personal.dateOfBirth) || Number.isNaN(t) || t > Date.now())
+      e["personal.dateOfBirth"] = "Pick your date of birth from the calendar.";
+  }
 
   for (const [key, label] of [
     ["linkedin", "LinkedIn"],

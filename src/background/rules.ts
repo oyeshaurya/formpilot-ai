@@ -11,11 +11,14 @@ import type { RequestField } from "./prompt";
 
 type Get = (p: Profile) => string;
 
-const full = (p: Profile) => [p.personal.firstName, p.personal.lastName].filter(Boolean).join(" ");
+const full = (p: Profile) => [p.personal.firstName, p.personal.middleName, p.personal.lastName].filter(Boolean).join(" ");
 
 /** autocomplete tokens (https://html.spec.whatwg.org/#autofill-field) → profile value */
 const AUTOCOMPLETE: Record<string, [Get, string]> = {
   "given-name": [(p) => p.personal.firstName, "first name"],
+  "additional-name": [(p) => p.personal.middleName, "middle name"],
+  bday: [(p) => p.personal.dateOfBirth, "date of birth"],
+  sex: [(p) => p.personal.gender, "gender"],
   "family-name": [(p) => p.personal.lastName, "last name"],
   name: [full, "full name"],
   nickname: [(p) => p.personal.preferredName, "preferred name"],
@@ -34,14 +37,24 @@ const AUTOCOMPLETE: Record<string, [Get, string]> = {
   url: [(p) => p.links.website || p.links.portfolio, "website"],
 };
 
+/** Questions about school (Class 10 / 12) rather than the degree. */
+const SCHOOL_LEVEL = /\b(class|std|standard)\s*(x|xii|10|12)\b|\b(10th|12th|ssc|hsc|matric\w*|high school|secondary school)\b/i;
+
 /** Label rules, most specific first. */
 const LABELS: [RegExp, Get, string][] = [
+  [/\bfather'?s?\b.*\bname\b/i, (p) => p.personal.fatherName, "father's name"],
+  [/\bmother'?s?\b.*\bname\b/i, (p) => p.personal.motherName, "mother's name"],
   [/\b(first|given|fore)\s*name\b/i, (p) => p.personal.firstName, "first name"],
+  [/\bmiddle\s*(name|initial)\b/i, (p) => p.personal.middleName, "middle name"],
   [/\b(last|family|sur)\s*name\b|\bsurname\b/i, (p) => p.personal.lastName, "last name"],
   [/\b(preferred|nick)\s*name\b|\bgo by\b/i, (p) => p.personal.preferredName || p.personal.firstName, "preferred name"],
   [/\bpronouns?\b/i, (p) => p.personal.pronouns, "pronouns"],
-  [/\b(full\s*)?name\b/i, full, "full name"],
+  [/\b(date of birth|birth\s*date|d\.?o\.?b)\b/i, (p) => p.personal.dateOfBirth, "date of birth"],
+  [/\b(gender|sex)\b/i, (p) => p.personal.gender, "gender"],
+  [/\b(nationality|citizenship)\b/i, (p) => p.personal.nationality, "nationality"],
   [/\be-?mail\b/i, (p) => p.personal.email, "email"],
+  // Before "phone": a second number is never the main one.
+  [/\b(alternate|alternative|secondary|second|other|additional|backup)\b.*\b(phone|mobile|number|contact)\b/i, (p) => p.personal.alternatePhone, "alternate phone"],
   [/\b(phone|mobile|cell|telephone|contact number|whatsapp)\b/i, (p) => p.personal.phone, "phone"],
   [/\blinked\s*in\b/i, (p) => p.links.linkedin, "LinkedIn"],
   [/\bgit\s*hub\b/i, (p) => p.links.github, "GitHub"],
@@ -58,11 +71,20 @@ const LABELS: [RegExp, Get, string][] = [
   [/\bnotice\s*period\b|\bavailable to start\b/i, (p) => p.work.noticePeriod, "notice period"],
   [/\b(salary|compensation|ctc|pay)\b.*\b(expect|desired)|\b(expected|desired)\s*(salary|compensation|ctc)\b/i, (p) => p.work.salaryExpectation, "salary expectation"],
   [/\bskills?\b/i, (p) => p.work.skills, "skills"],
-  [/\b(school|university|college|institution|alma mater)\b/i, (p) => p.education.school, "school"],
-  [/\b(field of study|major|discipline|speciali[sz]ation)\b/i, (p) => p.education.fieldOfStudy, "field of study"],
+  [/\b(school|university|college|institut\w*|alma mater)\b/i, (p) => p.education.school, "school"],
+  [/\b(field of study|major|discipline|speciali[sz]ation|branch)\b/i, (p) => p.education.fieldOfStudy, "field of study"],
+  [/\bhighest\b.*\b(qualification|education|degree)\b|\beducation(al)?\s*(level|qualification)\b/i, (p) => p.education.highestQualification || p.education.degree, "highest qualification"],
   [/\bdegree\b|\bqualification\b/i, (p) => p.education.degree, "degree"],
   [/\bgraduat(ion|ed|e)\b.*\b(year|date)\b|\byear of (graduation|passing)\b/i, (p) => p.education.graduationYear, "graduation year"],
+  [/\b(c?gpa|cpi|sgpa|percentage|aggregate|marks)\b/i, (p) => p.education.grade, "CGPA or percentage"],
+  // Last: a bare "Name" or "Full name", never "Name of employer" or "Board name".
+  [/^(your\s+|applicant'?s?\s+|candidate'?s?\s+)?(full\s+|legal\s+|complete\s+)?name\b(?!\s+of\b)/i, full, "full name"],
 ];
+
+const EDUCATION = new Set(["school", "degree", "field of study", "graduation year", "CGPA or percentage", "highest qualification"]);
+
+/** "Node.js", "node js" and "NodeJS" compare equal. */
+const skillKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9+#]/g, "");
 
 /** Yes/no questions answered by profile flags. */
 const YES_NO: [RegExp, (p: Profile) => "yes" | "no" | "", string][] = [
@@ -146,15 +168,19 @@ export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse
       continue;
     }
 
-    if (NOT_ABOUT_YOU.test(about)) {
+    // "Father's name" is yours to give; "Father's occupation" or a parent's phone is not in the profile.
+    const parentName = /\b(father|mother)'?s?\b.*\bname\b/i.test(label) && !/\b(occupation|job|contact|phone|number|e-?mail)\b/i.test(label);
+    if (NOT_ABOUT_YOU.test(about) && !parentName) {
       unmapped.push({ fieldId: f.id, reason: "About someone else: fill it yourself" });
       continue;
     }
 
-    // 2 · checkbox groups and multi-selects of skills
-    if ((f.kind === "checkbox-group" || f.kind === "multiselect") && /\b(skills?|technolog\w*|languages?|tools?)\b/i.test(label)) {
-      const mine = profile.work.skills.split(/[,;\n]/).map((s) => s.trim().toLowerCase()).filter(Boolean);
-      const values = (f.options ?? []).filter((o) => mine.includes(o.label.toLowerCase().trim())).map((o) => o.value);
+    // 2 · checkbox groups and multi-selects of skills ("JavaScript / TypeScript" counts if either is listed)
+    if ((f.kind === "checkbox-group" || f.kind === "multiselect") && /\b(skills?|technolog\w*|languages?|tools?|frameworks?)\b/i.test(label)) {
+      const mine = new Set(profile.work.skills.split(/[,;\n]/).map(skillKey).filter(Boolean));
+      const values = (f.options ?? [])
+        .filter((o) => mine.has(skillKey(o.label)) || o.label.split(/\s*(?:\/|,|&|\band\b|\bor\b)\s*/i).some((part) => mine.has(skillKey(part))))
+        .map((o) => o.value);
       if (values.length) mappings.push({ fieldId: f.id, value: "", values, source: "profile", confidence: "medium", reasoning: "From your profile: skills" });
       else unmapped.push({ fieldId: f.id, reason: "None of your skills are listed here" });
       continue;
@@ -188,6 +214,11 @@ export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse
       }
     }
     if (hit && hit[1] === "country" && NOT_RESIDENCE.test(label)) hit = undefined;
+    // "Class 10: Percentage" or "12th: Year of passing" asks about school, not the degree.
+    if (hit && EDUCATION.has(hit[1]) && SCHOOL_LEVEL.test(label)) {
+      unmapped.push({ fieldId: f.id, reason: "School marks are not in your profile: save them in Other facts" });
+      continue;
+    }
 
     if (!hit) {
       unmapped.push({ fieldId: f.id, reason: "No match in your profile" });

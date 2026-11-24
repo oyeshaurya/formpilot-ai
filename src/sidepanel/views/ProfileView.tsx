@@ -16,15 +16,19 @@ interface FieldDef {
   inputMode?: "text" | "email" | "tel" | "url" | "numeric" | "decimal";
   placeholder?: string;
   hint?: string;
-  choice?: "yesno";
+  choice?: keyof typeof CHOICES;
   multiline?: boolean;
 }
 
-const YES_NO = [
-  { value: "", label: "Not set" },
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-] as const;
+const NOT_SET = { value: "", label: "Not set" };
+const CHOICES = {
+  yesno: [NOT_SET, { value: "yes", label: "Yes" }, { value: "no", label: "No" }],
+  gender: [NOT_SET, ...["Male", "Female", "Non-binary", "Prefer not to say"].map((v) => ({ value: v, label: v }))],
+  qualification: [
+    NOT_SET,
+    ...["High school", "Diploma", "Bachelor's degree", "Master's degree", "Doctorate (PhD)"].map((v) => ({ value: v, label: v.replace("'", "’") })),
+  ],
+} as const;
 
 /** Layout: each inner array is one row (one or two fields). */
 const SECTIONS: { group: Group; title: string; description?: string; rows: FieldDef[][] }[] = [
@@ -35,14 +39,34 @@ const SECTIONS: { group: Group; title: string; description?: string; rows: Field
     rows: [
       [
         { group: "personal", key: "firstName", label: "First name", autoComplete: "given-name" },
-        { group: "personal", key: "lastName", label: "Last name", autoComplete: "family-name" },
+        { group: "personal", key: "middleName", label: "Middle name", autoComplete: "additional-name" },
       ],
       [
+        { group: "personal", key: "lastName", label: "Last name", autoComplete: "family-name" },
         { group: "personal", key: "preferredName", label: "Preferred name", autoComplete: "nickname" },
+      ],
+      [
+        { group: "personal", key: "dateOfBirth", label: "Date of birth", type: "date", autoComplete: "bday" },
+        { group: "personal", key: "gender", label: "Gender", choice: "gender" },
+      ],
+      [
+        { group: "personal", key: "nationality", label: "Nationality", placeholder: "Indian" },
         { group: "personal", key: "pronouns", label: "Pronouns", placeholder: "she/her" },
       ],
       [{ group: "personal", key: "email", label: "Email", type: "email", inputMode: "email", autoComplete: "email" }],
-      [{ group: "personal", key: "phone", label: "Phone", type: "tel", inputMode: "tel", autoComplete: "tel" }],
+      [
+        { group: "personal", key: "phone", label: "Phone", type: "tel", inputMode: "tel", autoComplete: "tel" },
+        { group: "personal", key: "alternatePhone", label: "Alternate phone", type: "tel", inputMode: "tel", autoComplete: "off" },
+      ],
+    ],
+  },
+  {
+    group: "personal",
+    title: "Family",
+    description: "For forms that ask for your parents’ names, such as government and college applications.",
+    rows: [
+      [{ group: "personal", key: "fatherName", label: "Father’s name" }],
+      [{ group: "personal", key: "motherName", label: "Mother’s name" }],
     ],
   },
   {
@@ -110,7 +134,11 @@ const SECTIONS: { group: Group; title: string; description?: string; rows: Field
         { group: "education", key: "degree", label: "Degree", placeholder: "BSc" },
         { group: "education", key: "fieldOfStudy", label: "Field of study" },
       ],
-      [{ group: "education", key: "graduationYear", label: "Graduation year", inputMode: "numeric", placeholder: "2024" }],
+      [
+        { group: "education", key: "graduationYear", label: "Graduation year", inputMode: "numeric", placeholder: "2024" },
+        { group: "education", key: "grade", label: "CGPA or percentage", placeholder: "8.9 / 10" },
+      ],
+      [{ group: "education", key: "highestQualification", label: "Highest qualification", choice: "qualification" }],
     ],
   },
 ];
@@ -196,19 +224,19 @@ export function ProfileView({ saved, onDirtyChange }: { saved: Profile; onDirtyC
         <p className="mt-2 text-[16px] text-ink">Everything is optional. Fill in what forms usually ask you.</p>
       </div>
       {SECTIONS.map((section) => (
-        <Section key={section.group} title={section.title} description={section.description}>
+        <Section key={section.title} title={section.title} description={section.description}>
           {section.rows.map((row, i) => {
             const fields = row.map((f) => {
               const path = `${f.group}.${f.key}`;
               const value = (draft[f.group] as Record<string, string>)[f.key] ?? "";
-              if (f.choice === "yesno")
+              if (f.choice)
                 return (
                   <SelectField
                     key={path}
                     id={fieldDomId(path)}
                     label={f.label}
                     value={value}
-                    options={YES_NO}
+                    options={CHOICES[f.choice]}
                     onChange={(v) => setField(f.group, f.key, v)}
                   />
                 );
@@ -249,7 +277,7 @@ export function ProfileView({ saved, onDirtyChange }: { saved: Profile; onDirtyC
 
       <Section
         title="Other facts"
-        description="Questions applications ask that are not above, saved once and reused: why you want to join, how you heard about us, your CGPA, an ID number."
+        description="Questions applications ask that are not above, saved once and reused: why you want to join, how you heard about us, your category, an ID number."
       >
         {draft.customFacts.length === 0 && <p className="text-[16px] text-muted">No extra facts yet.</p>}
         {draft.customFacts.map((f, i) => (

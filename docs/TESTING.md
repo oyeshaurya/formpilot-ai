@@ -28,6 +28,15 @@ npm run e2e         # 59 checks: the real extension in headless Microsoft Edge f
    - **Undo all** (panel or on-page bar) puts the form back; the form is never submitted.
 8. Try real sites without submitting: a public Google Form, a Greenhouse or Lever job application, a hackathon sign-up page.
 
+## Google Forms test set
+
+`dev/google-forms/create-job-application-forms.gs` builds three job application forms in your own Google account: a corporate software engineer role, a government-style recruitment form (parents' names, category, Aadhaar, PAN, bank fields) and a student internship form (parent and emergency contacts, CGPA).
+
+1. Open [script.google.com](https://script.google.com), create a new project and paste the file in.
+2. Run `createAllForms` and approve the permission prompt.
+3. Open the Execution log for the fill links.
+4. Fill each form with FormPilot and check that identity and bank fields stay empty, and that parent names, dates of birth, dropdowns, checkboxes and grids are handled. Do not submit.
+
 ## Things to know
 
 - Browsers do not let extensions run on their own pages (`chrome://`, `edge://`), on the extension stores, or inside PDF viewers. FormPilot says so instead of failing silently.

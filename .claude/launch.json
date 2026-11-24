@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "harness"],
       "port": 5174
+    },
+    {
+      "name": "panel-harness-alt",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "harness", "--", "--port", "5176"],
+      "port": 5176
     }
   ]
 }

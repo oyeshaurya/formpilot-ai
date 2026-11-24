@@ -162,6 +162,8 @@ function kindOf(el: Element): FieldKind | null {
   }
   const role = el.getAttribute("role");
   if (role === "combobox") return "combobox";
+  // Google Forms and other ARIA drop-downs: a listbox whose options are already in the DOM.
+  if (role === "listbox") return el.getAttribute("aria-multiselectable") === "true" ? null : "select";
   if (role === "radiogroup") return "radio-group";
   if (role === "checkbox") return "checkbox";
   if ((el as HTMLElement).isContentEditable) return "contenteditable";
@@ -246,14 +248,62 @@ function comboboxOptions(el: Element): FieldDescriptor["options"] {
   return opts.length ? opts : undefined;
 }
 
+/* ───────────── ARIA questions (Google Forms and similar) ───────────── */
+
+/**
+ * The question a custom control belongs to: the nearest ancestor holding exactly one
+ * role=heading. Google Forms wraps each question in such a block; the checkbox options
+ * inside it sit in their own nested list items, so `closest('[role=listitem]')` is not enough.
+ */
+export function ariaQuestion(el: Element): { box: Element; label: string } | null {
+  let node = el.parentElement;
+  for (let depth = 0; node && depth < 12; depth++, node = node.parentElement) {
+    const hs = node.querySelectorAll("[role='heading']");
+    if (hs.length === 1) {
+      const label = textOf(hs[0]).replace(/\s*\*$/, "");
+      return label ? { box: node, label } : null;
+    }
+    if (hs.length > 1) return null;
+  }
+  return null;
+}
+
+/** An ARIA option's visible name: its data value, aria-label or text. */
+export function ariaName(o: Element): string {
+  return clean(o.getAttribute("data-answer-value") || o.getAttribute("data-value") || o.getAttribute("aria-label") || textOf(o), 120);
+}
+
+/** The "Other:" choice with its own text box: never ticked by FormPilot. */
+export const isOtherChoice = (o: Element) =>
+  o.getAttribute("data-answer-value") === "__other_option__" ||
+  o.getAttribute("data-value") === "__other_option__" ||
+  /^other:?$/i.test(clean(o.getAttribute("aria-label")));
+
+/** Options of an ARIA listbox, deduplicated (Google Forms renders the list twice once opened). */
+export function listboxOptions(el: Element): { value: string; label: string; el: Element }[] {
+  const seen = new Set<string>();
+  const out: { value: string; label: string; el: Element }[] = [];
+  for (const o of Array.from(el.querySelectorAll("[role='option']"))) {
+    const value = clean(o.getAttribute("data-value") ?? textOf(o), 120);
+    if (!value || seen.has(value)) continue; // "" is the "Choose" placeholder
+    seen.add(value);
+    out.push({ value, label: textOf(o) || clean(o.getAttribute("aria-label")) || value, el: o });
+  }
+  return out;
+}
+
+/** Sub-labels that say nothing on their own ("Date", "Hour") get their question prepended. */
+const GENERIC_LABEL = /^(date|time|hour|minute|day|month|year|am\/pm|your answer)$/i;
+
 export function extract(): FrameExtract {
   const skipped = { sensitive: 0, hidden: 0, disabled: 0, overflow: 0 };
   const fields: FieldDescriptor[] = [];
   const seenGroups = new Set<string>();
+  const seenQuestions = new Set<Element>();
   const headings = Array.from(document.querySelectorAll("h1,h2,h3,h4,legend,[role='heading']"));
   const candidates = Array.from(
     document.querySelectorAll(
-      "input,textarea,select,[contenteditable='true'],[contenteditable=''],[role='combobox'],[role='radiogroup'],[role='checkbox']",
+      "input,textarea,select,[contenteditable='true'],[contenteditable=''],[role='combobox'],[role='radiogroup'],[role='checkbox'],[role='listbox']",
     ),
   );
 
@@ -284,9 +334,76 @@ export function extract(): FrameExtract {
       skipped.disabled++;
       continue;
     }
+    // A listbox that belongs to a combobox is that combobox's pop-up, not a field of its own.
+    if (el.getAttribute("role") === "listbox" && (el.closest("[role='combobox']") || (el.id && document.querySelector(`[aria-controls~="${CSS.escape(el.id)}"],[aria-owns~="${CSS.escape(el.id)}"]`))))
+      continue;
     if (!isVisible(el)) {
       skipped.hidden++;
       continue;
+    }
+
+    /* ARIA drop-down (Google Forms): options are in the DOM, picked by clicking */
+    if (el.getAttribute("role") === "listbox") {
+      const label = byIds(el.getAttribute("aria-labelledby")) || clean(el.getAttribute("aria-label")) || ariaQuestion(el)?.label || questionText(el);
+      if (isSensitive(el, label)) {
+        skipped.sensitive++;
+        continue;
+      }
+      const opts = listboxOptions(el);
+      if (!opts.length) continue;
+      const selected = opts.find((o) => o.el.getAttribute("aria-selected") === "true");
+      push({
+        id: tag(el),
+        kind: "select",
+        label: label.replace(/\s*\*$/, ""),
+        section: sectionOf(el, headings) || undefined,
+        required: el.getAttribute("aria-required") === "true",
+        options: opts.slice(0, MAX_OPTIONS).map(({ value, label: l }) => ({ value, label: l })),
+        currentValue: selected?.value,
+      });
+      continue;
+    }
+
+    /* ARIA checkboxes: the options of one question become one checkbox-group */
+    if (kind === "checkbox" && !(el instanceof HTMLInputElement)) {
+      const q = ariaQuestion(el);
+      if (q) {
+        if (seenQuestions.has(q.box)) continue;
+        seenQuestions.add(q.box);
+        const boxes = Array.from(q.box.querySelectorAll("[role='checkbox']")).filter(
+          (b) => isVisible(b) && b.getAttribute("aria-disabled") !== "true" && !isOtherChoice(b),
+        );
+        if (isSensitive(el, q.label)) {
+          skipped.sensitive++;
+          continue;
+        }
+        if (boxes.length >= 2) {
+          const id = tag(boxes[0]!);
+          boxes.forEach((b) => b.setAttribute(ID_ATTR, id));
+          const checked = boxes.filter((b) => b.getAttribute("aria-checked") === "true").map(ariaName);
+          push({
+            id,
+            kind: "checkbox-group",
+            label: q.label,
+            section: sectionOf(el, headings) || undefined,
+            required: !!q.box.querySelector("[aria-label*='required' i]"),
+            options: boxes.slice(0, MAX_OPTIONS).map((b) => ({ value: ariaName(b), label: ariaName(b) })),
+            currentValue: checked.length ? checked.join(", ") : undefined,
+          });
+          continue;
+        }
+        // One box under a question ("Declaration: I confirm…"): keep both so consent checks see it.
+        const one = boxes[0] ?? el;
+        push({
+          id: tag(one),
+          kind: "checkbox",
+          label: `${q.label}: ${ariaName(one)}`,
+          section: sectionOf(el, headings) || undefined,
+          required: !!q.box.querySelector("[aria-label*='required' i]"),
+          currentValue: one.getAttribute("aria-checked") === "true" ? "checked" : undefined,
+        });
+        continue;
+      }
     }
 
     /* native radio group: one descriptor for the whole group */
@@ -318,7 +435,7 @@ export function extract(): FrameExtract {
 
     /* ARIA radiogroup with role=radio children */
     if (kind === "radio-group") {
-      const radios = Array.from(el.querySelectorAll("[role='radio']")).filter(isVisible);
+      const radios = Array.from(el.querySelectorAll("[role='radio']")).filter((r) => isVisible(r) && !isOtherChoice(r));
       const label = byIds(el.getAttribute("aria-labelledby")) || clean(el.getAttribute("aria-label")) || questionText(el);
       if (isSensitive(el, label)) {
         skipped.sensitive++;
@@ -337,7 +454,11 @@ export function extract(): FrameExtract {
       continue;
     }
 
-    const label = resolveLabel(el);
+    let label = resolveLabel(el);
+    if (!label || GENERIC_LABEL.test(label)) {
+      const q = ariaQuestion(el)?.label;
+      if (q) label = label ? `${q} (${label})` : q;
+    }
     const localOnly = isLocalOnly(el, label);
     if (!localOnly && isSensitive(el, label)) {
       skipped.sensitive++;

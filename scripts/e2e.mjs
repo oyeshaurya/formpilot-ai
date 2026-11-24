@@ -275,6 +275,43 @@ try {
   check("Basic mode fills Aadhaar from your saved fact", basicState.aadhaar === "1234 5678 9012", basicState.aadhaar);
   check("Basic mode sends nothing to Anthropic", !run?.usage);
 
+  /* 9c · a Google Forms page (ARIA drop-downs, checkbox lists, radio groups), Basic mode */
+  await evaluate(
+    panel.session,
+    `chrome.storage.local.set({ "fp:profile": {
+      personal: { firstName: "Shaurya", lastName: "Verma", dateOfBirth: "2004-05-17", gender: "Male", nationality: "Indian",
+                  phone: "+91 77038 19673", fatherName: "Rakesh Verma" },
+      address: { country: "India" }, links: {},
+      work: { skills: "TypeScript, Python, React" },
+      education: { degree: "B.Tech", highestQualification: "Bachelor's degree", grade: "8.9" },
+      customFacts: [] } })`,
+  );
+  const gform = await open(`http://localhost:${PORT}/gform.html`);
+  await wait(1200);
+  const gTab = await evaluate(panel.session, `chrome.tabs.query({ url: "http://localhost:${PORT}/gform.html" }).then(t => t[0].id)`);
+  await evaluate(panel.session, `chrome.runtime.sendMessage({ type: "FILL_PAGE", tabId: ${gTab} })`);
+  run = await waitRun(panel, gTab);
+  check("Google Forms page fills", run?.status === "done", `${run?.status} ${run?.error?.message ?? ""}`);
+  const g = await evaluate(gform.session, `gformState()`);
+  check("GF: first and last name", g.first === "Shaurya" && g.last === "Verma", `${g.first} ${g.last}`);
+  check("GF: no middle name invented", g.middle === "", g.middle);
+  check("GF: alternate phone not copied from main", g.alt === "" && g.phone === "+91 77038 19673", `alt="${g.alt}"`);
+  check("GF: date of birth (sub-label 'Date')", g.dob === "2004-05-17", g.dob);
+  check("GF: gender radio from profile", g.gender === "Male", g.gender);
+  check("GF: nationality drop-down", g.nat === "Indian", g.nat);
+  check("GF: country drop-down", g.country === "India", g.country);
+  check("GF: highest qualification drop-down", g.hq === "Bachelor's degree", g.hq);
+  check("GF: skills ticked, combined option counts", JSON.stringify(g.skills) === JSON.stringify(["JavaScript / TypeScript", "Python"]), JSON.stringify(g.skills));
+  check("GF: CGPA from profile", g.cgpa === "8.9", g.cgpa);
+  check("GF: Class 10 marks not given the degree CGPA", g.c10 === "", g.c10);
+  check("GF: father's name, not his occupation", g.father === "Rakesh Verma" && g.focc === "", `${g.father} / ${g.focc}`);
+  check("GF: declaration left for you", g.decl === false);
+  await shot(gform.session, "5-google-form.png");
+  await evaluate(panel.session, `chrome.runtime.sendMessage({ type: "UNDO", tabId: ${gTab} })`);
+  await wait(2500);
+  const gu = await evaluate(gform.session, `gformState()`);
+  check("GF: undo resets drop-downs and boxes", gu.nat === "" && gu.country === "" && gu.hq === "" && gu.skills.length === 0 && gu.first === "", JSON.stringify(gu));
+
   /* 10 · browser pages are refused with a clear reason */
   await open("edge://version");
   await wait(600);

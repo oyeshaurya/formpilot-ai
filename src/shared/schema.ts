@@ -12,11 +12,19 @@ const yesNo = z.enum(["yes", "no", ""]).default("");
 
 export const PersonalSchema = z.object({
   firstName: str(100),
+  middleName: str(100),
   lastName: str(100),
   preferredName: str(100),
   pronouns: str(40),
+  /** YYYY-MM-DD */
+  dateOfBirth: str(10),
+  gender: str(40),
+  nationality: str(100),
   email: str(254),
   phone: str(40),
+  alternatePhone: str(40),
+  fatherName: str(150),
+  motherName: str(150),
 });
 
 export const AddressSchema = z.object({
@@ -51,6 +59,9 @@ export const EducationSchema = z.object({
   degree: str(150),
   fieldOfStudy: str(150),
   graduationYear: str(10),
+  highestQualification: str(100),
+  /** CGPA or percentage, as the person writes it: "8.9 / 10", "86%". */
+  grade: str(40),
 });
 
 export const CustomFactSchema = z.object({

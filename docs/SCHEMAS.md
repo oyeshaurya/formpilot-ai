@@ -18,19 +18,22 @@ Run state lives in `chrome.storage.session` under `fp:run:<tabId>` (section 5).
 
 ```jsonc
 {
-  "personal":     { "firstName", "lastName", "preferredName", "pronouns", "email", "phone" },
+  "personal":     { "firstName", "middleName", "lastName", "preferredName", "pronouns",
+                    "dateOfBirth": "YYYY-MM-DD", "gender", "nationality",
+                    "email", "phone", "alternatePhone", "fatherName", "motherName" },
   "address":      { "street", "city", "region", "postalCode", "country" },
   "links":        { "linkedin", "github", "portfolio", "website" },
   "work":         { "currentTitle", "currentCompany", "yearsExperience", "skills",
                     "workAuthorization", "needsSponsorship": "yes" | "no" | "",
                     "noticePeriod", "salaryExpectation", "willingToRelocate": "yes" | "no" | "" },
-  "education":    { "school", "degree", "fieldOfStudy", "graduationYear" },
+  "education":    { "school", "degree", "fieldOfStudy", "graduationYear",
+                    "highestQualification", "grade" },          // grade: CGPA or percentage
   "customFacts":  [{ "id", "label", "value" }],   // "How did you hear about us?: A friend", "CGPA: 8.7"
   "updatedAt":    "ISO date"
 }
 ```
 
-Deliberately absent: government IDs, passport numbers, bank or card data, passwords, date of birth. The extractor also refuses to fill such fields on a page (section 2).
+Deliberately absent: government IDs, passport numbers, bank or card data, passwords. Date of birth, gender, nationality and parents' names are optional and used only when the person fills them in. The extractor also refuses to fill such fields on a page (section 2).
 
 ## 2. DOM field extractor output (content script → service worker)
 
