@@ -22,6 +22,8 @@ function contentScript(): Plugin {
         write: false,
         output: { format: "iife", minify: true },
         platform: "browser",
+        // A new id per build lets a freshly injected page script replace one left in a tab by an older build.
+        transform: { define: { __FP_BUILD__: JSON.stringify(`${Date.now().toString(36)}`) } },
       });
       const chunk = out.output.find((o) => o.type === "chunk");
       if (!chunk || chunk.type !== "chunk") throw new Error("content script did not build");
