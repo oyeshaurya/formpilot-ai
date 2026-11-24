@@ -276,7 +276,7 @@ const ON_DEVICE_GAP =
 async function askOnDevice(req: Omit<OnDeviceRequest, "type">): Promise<FillResponse> {
   if ((globalThis as { LanguageModel?: unknown }).LanguageModel) return onDeviceFill(req);
   const reply = (await chrome.runtime.sendMessage({ type: "FP_ONDEVICE_FILL", ...req } satisfies OnDeviceRequest).catch(() => null)) as OnDeviceReply | null;
-  if (!reply) throw new Error("open the FormPilot side panel to use it");
+  if (!reply) throw new Error("keep FormPilot open (the popup or the side panel) while it fills");
   if (!reply.ok) throw new Error(reply.error);
   return reply.response;
 }

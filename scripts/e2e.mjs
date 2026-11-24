@@ -392,6 +392,18 @@ try {
   writeFileSync(path.join(SHOTS, "3-imported-pdf.md"), pdf.text);
   writeFileSync(path.join(SHOTS, "4-imported-docx.md"), docx.text);
 
+  /* 10b · the toolbar popup: the same app in a 400 x 600 frame, with a way into the side panel */
+  const popup = await open(`chrome-extension://${extId}/src/sidepanel/popup.html`);
+  await wait(900);
+  const pop = await evaluate(
+    popup.session,
+    `({ marked: document.documentElement.classList.contains("fp-popup"), side: !!document.querySelector('[aria-label="Open in side panel"]'), tabs: document.querySelectorAll('[role="tab"]').length, w: document.body.getBoundingClientRect().width, h: document.body.getBoundingClientRect().height })`,
+  );
+  check("popup page is the popup", pop?.marked === true, JSON.stringify(pop));
+  check("popup offers the side panel", pop?.side === true);
+  check("popup has the four tabs", pop?.tabs === 4);
+  check("popup frame is 400 x 600", Math.round(pop?.w) === 400 && Math.round(pop?.h) === 600, `${pop?.w} x ${pop?.h}`);
+
   /* 11 · no errors in the panel */
   const panelErrors = await evaluate(panel.session, `window.__fpErrors ?? []`);
   check("panel has no uncaught errors", Array.isArray(panelErrors) && panelErrors.length === 0, JSON.stringify(panelErrors));

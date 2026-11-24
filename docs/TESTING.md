@@ -16,7 +16,7 @@ npm run e2e         # 59 checks: the real extension in headless Microsoft Edge f
 2. Load it:
    - **Chrome:** `chrome://extensions` → Developer mode on → **Load unpacked** → pick the `dist` folder.
    - **Edge:** `edge://extensions` → Developer mode on → **Load unpacked** → pick the `dist` folder.
-3. Click the FormPilot icon (pin it from the puzzle-piece menu first). The side panel opens.
+3. Click the FormPilot icon (pin it from the puzzle-piece menu first). FormPilot opens as a popup; the button beside the status pill moves it into the side panel.
 4. **Profile:** fill in at least name, email and city; **Save profile**. **Resume:** **Import PDF or Word** (or paste text), check it, **Save resume**. Sample files: `dev/fixtures/resume.pdf`, `dev/fixtures/resume.docx`.
 5. **Optional, Settings:** with no key FormPilot fills in free **Basic mode** (facts only, no drafted answers, nothing sent anywhere). For drafted answers, paste your Anthropic API key (from https://console.anthropic.com/settings/keys), **Save key**, then **Test key**. It should say the key works.
 6. Try the local test form: run `npm run harness`, open http://localhost:5174/test-form.html, then **Fill → Fill this page**.

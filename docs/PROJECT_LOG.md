@@ -4,6 +4,46 @@ A running record of what was built, changed and decided. Newest entry first.
 
 ---
 
+## 2026-11-24 (latest): toolbar popup, Resume editor, new logo
+
+**Why:** you asked for three things: clicking the icon in Edge opened FormPilot docked in the side panel while other extensions open a popup window; the Resume view's Import and Save bar overlapped the text; and a better logo.
+
+**Changed:**
+- **Popup:** the toolbar icon opens a 400 x 600 popup (`src/sidepanel/popup.html`, set as `action.default_popup`). The worker now sets `openPanelOnActionClick: false`, because the browser kept the old setting. The side panel stays available: a button beside the status pill moves FormPilot into it, and the shortcut and the right-click menu still open it, so a review stays on screen while you work on the page.
+- **Drafts:** a popup closes when you click the page and cannot show the "unsaved changes" warning, so unsaved Profile and Resume edits are kept in `chrome.storage.session` (memory only, cleared on browser close or Delete all data) and restored when FormPilot opens again (`hooks/useKeptDraft.ts`).
+- **Resume:** Import moved to the editor card's header and the status line and Save to its footer; the editor fills the view and scrolls inside itself. Nothing floats over the text.
+- **Readable without blur:** Edge's side panel does not draw backdrop blur, which is why text showed through the dock and the save bar. Those bars and the status pill are now 90 to 92% opaque.
+- **Logo:** a new mark (see DESIGN.md): an "f" whose cyan crossbar is a form line being filled, ending in the wordmark's glowing dot, on a glass tile. One SVG source (`scripts/logo.mjs`) for the toolbar icons and the store logo, rendered with headless Edge (`scripts/lib/edge.mjs`, now shared with `store-assets.mjs`); a small cut for 16 and 32px.
+- On-device AI's message when no FormPilot page is open now says to keep the popup or the side panel open.
+- The dev harness takes `?popup` to show the popup frame.
+
+**Verified:** typecheck clean; `npm test` 74 / 74; `npm run e2e` 87 / 87 in Edge (adds: popup page marked, its side-panel button, four tabs, 400 x 600 frame); `npm run package`: store checks pass (popup in the manifest); store images re-rendered with the new logo. Resume checked in the harness at 460px with a 40-line resume: no overlap. Not checked here: the side-panel button in a real popup (it needs a click inside Edge's own popup), and how Edge's side panel draws the more opaque bars.
+
+---
+
+## 2026-11-24 (latest): Glass redesign, cyan on near-black
+
+**Why:** you asked for a dark, minimal, premium glassmorphism UI with cyan accents (`#27D9E8` on `#080B0E`), applied to the existing panel with every feature kept. The reference screenshot did not come through, so the work follows your written brief.
+
+**Changed:**
+- `src/styles/app.css` rewritten as the Glass system (spec in [DESIGN.md](DESIGN.md)): lit near-black ground, three glass tiers (raised hero, cards, insets), floating bars with progressive blur, cyan pill buttons, glass fields, drawn radios, checkboxes and a switch, option rows, badges, a meter, container-query layouts.
+- Type: Manrope + JetBrains Mono (the skill's `manrope` pairing). Instrument Sans and Instrument Serif removed (one font package fewer).
+- `App.tsx`: one scroll area under a frosted top bar and a frosted dock; a sliding cyan indicator on the open tab; Up and Down arrows move between tabs too; on wide panels (760px+) the dock becomes a sidebar.
+- Fill view: a raised hero card with a soft cyan light behind it; progress shows inside the hero; on 1000px+ the idle view has two columns; "Your setup" list with a heading; badges for review rows; stat rings with no stray dot at zero. With nothing in the vault, the hero's button is "Add your details" (opens Profile) instead of a disabled Fill button.
+- Settings: model and key-storage choices are option rows that light cyan; "Outline filled fields" is a switch; key status is a small pane with a dot; confirmations are tinted insets; download progress uses `Intl` percent and a transform-driven meter.
+- Profile and Resume: intros match the other views; the Markdown editor sits in a glass card that grows with the panel; at under 360px the import button reads "Import" (its accessible name keeps "PDF or Word").
+- Empty status lines take no room (the live region stays in the page).
+- On-page bar (`overlay.ts`): frosted, cyan focus ring and hover edge; the "Show" flash is cyan. Green and amber outlines unchanged.
+- Toolbar icon recoloured (charcoal, off-white, cyan); `theme-color` `#080b0e`; the dev harness takes `?w=600` or `?w=full`.
+
+**Verified:** typecheck clean; `npm test` 74 / 74; `npm run e2e` 83 / 83 in Edge (fills, review in the real panel, undo, PDF and Word import, on-device paths, no panel errors); build clean, fonts bundled, no remote font URLs; harness checked at 320, 400 and full width: no sideways scroll at 320, every control outside running text 44px or taller (radios and switch sit inside full-row labels); taste checker 3 FAIL, all the dock floating over content by design (see DESIGN.md); copy-lint 0 FAIL.
+
+**Then, at your request, type after your reference snippets** ("tally", "No Claude conversation found", "license help diagnostics … Claude settings →"): view titles and empty states in Instrument Serif italic; the wordmark becomes `formpilot` in lowercase JetBrains Mono after a glowing cyan dot (the logo tile leaves the status pill); tab labels, small labels, links and the pill's details in lowercase mono; links to other tabs end in "→". Manrope stays for body, labels and buttons. Three families, as you asked.
+
+**Store images** re-rendered in the new look (`npm run store-assets`): the Glass ground, the dot wordmark, serif headlines, the panel's own fonts embedded; screenshot 1 now shows the whole form column and the on-page bar uncut; the 300px logo lost its stray scrollbars.
+
+---
+
 ## 2026-11-24 (latest): typefaces after your reference
 
 **Changed:** titles in Instrument Serif italic; section labels in JetBrains Mono, uppercase and spaced; status lines, ring numbers and the `formpilot` wordmark in JetBrains Mono; body and buttons stay Instrument Sans. DM Mono removed. Three families is a deliberate exception to the taste skill's two-family rule, because you asked for this look. Store screenshots re-rendered.

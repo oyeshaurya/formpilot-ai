@@ -1,85 +1,97 @@
 @import "tailwindcss";
 /* Fonts are bundled with the extension (Fontsource, OFL); nothing is fetched from Google. */
-@import "@fontsource-variable/instrument-sans/standard.css"; /* weight 400–700 and width 75–100% axes */
-@import "@fontsource-variable/jetbrains-mono/wght.css"; /* labels, numbers, status */
-@import "@fontsource/instrument-serif/400-italic.css"; /* titles, italic */
+@import "@fontsource-variable/manrope/wght.css"; /* everything: headings, body, buttons (weight 200–800 axis) */
+@import "@fontsource-variable/jetbrains-mono/wght.css"; /* the wordmark, navigation, links, labels, numbers, keys */
+@import "@fontsource/instrument-serif/400-italic.css"; /* view titles and empty states, italic */
 /* Scan src/ explicitly so the dev harness (Vite root: dev/) generates the same classes. */
 @source "..";
 
 /*
- * FormPilot design system: Dynamic Island (see docs/DESIGN.md).
- * Solid black "islands" (cards, the tab bar and the morphing status island at the top)
- * float on a graphite canvas lit softly from above. Bold numbers, one orange accent,
- * cyan as the second ring colour, Apple-style system green and amber for states.
- * Controls are capsules that lift on hover and press on click; a faint light follows
- * the pointer. Fields are charcoal wells inside the black. Colours registered with the
- * taste skill (start.mjs brand); contrast checked on rendered pixels.
+ * FormPilot design system: Glass (see docs/DESIGN.md).
+ * A near-black ground lit by two soft cyan and teal lights. Content sits on layered,
+ * frosted glass: section cards, a raised hero card, and the floating bars (status pill,
+ * dock, save bar) that blur what scrolls beneath them. Cyan marks what you can act on
+ * and what is active; green, amber and red only for states.
+ * Colours registered with the taste skill (start.mjs brand, type manrope, radius round).
  */
 :root {
   color-scheme: dark;
 
-  /* type: the skill's "instrument" pairing (start.mjs types --page software: "design and productivity
-     software; precise, friendly, calm"). One family; DM Mono only for keys. Tokens as start.mjs prints them. */
-  --font-display: "Instrument Sans Variable", "Instrument Sans", system-ui, sans-serif;
-  --font-text: "Instrument Sans Variable", "Instrument Sans", system-ui, sans-serif;
+  /* type: the skill's "manrope" pairing (start.mjs types --page software: "fintech, data and AI products"). */
+  --font-display: "Manrope Variable", "Manrope", system-ui, sans-serif;
+  --font-text: "Manrope Variable", "Manrope", system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  /* Titles in an italic serif, after your reference (a deliberate third family, beyond the taste skill's two). */
+  /* Titles and empty states in an italic serif, after your reference (a deliberate third family). */
   --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
   --display-weight: 500;
-  --display-tracking: -0.028em;
-  --display-stretch: 96%;
+  --display-tracking: -0.035em;
 
-  /* canvas */
-  --env: #1c1c1e;
+  /* ground */
+  --bg: #080b0e;
+  --bg-2: #11171c;
 
   /* text */
-  --ink: #f5f5f7;                    /* primary */
-  --muted: rgb(235 235 245 / 0.62);  /* secondary */
-  --faint: rgb(235 235 245 / 0.38); /* placeholders only */
+  --ink: #f1f5f7;
+  --muted: #9aa6af;
+  --faint: #76828b; /* placeholders only */
 
-  /* accent: orange for actions, rings and focus; cyan as the second ring colour */
-  --accent: #ff6a3d;
-  --accent-2: #40c8e0;
-  --ok: #30d158;    /* from your profile */
-  --warn: #ffb340;  /* drafted, check it */
-  --danger: #ff6b6b;
+  /* accent: cyan for actions, focus and the active state; muted teal as its quiet partner */
+  --accent: #27d9e8;
+  --accent-hi: #5ae5f0;
+  --accent-ink: #061014;
+  --teal: #3aa6a1;
+  --accent-soft: rgb(39 217 232 / 0.12);
+  --accent-line: rgb(39 217 232 / 0.42);
 
-  /* island materials: opaque black, lifted a step for controls */
-  --mat-thin: #0b0b0c;
-  --mat: #000000;
-  --mat-thick: #1c1c1e;
-  --mat-hover: #2c2c2e;
-  --recess: #1c1c1e;
-  --blur: none;
+  /* states, only where they mean something */
+  --ok: #4ade80; /* from your profile */
+  --warn: #f6b955; /* drafted: check it */
+  --danger: #ff7b7b;
+  --ok-soft: rgb(74 222 128 / 0.13);
+  --warn-soft: rgb(246 185 85 / 0.14);
+  --danger-soft: rgb(255 123 123 / 0.12);
 
-  /* rims and lines: a faint highlight along the top edge of each island */
-  --rim: linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.03) 30%, rgb(255 255 255 / 0.02) 70%, rgb(255 255 255 / 0.06));
-  --line: rgb(255 255 255 / 0.08);
-  --line-strong: rgb(255 255 255 / 0.16);
+  /* glass: three weights, thin to thick */
+  --glass-1: rgb(17 25 31 / 0.5); /* section cards */
+  --glass-2: rgb(19 29 36 / 0.62); /* the raised hero card */
+  --glass-3: rgb(10 15 19 / 0.92); /* bars that float over content: opaque enough to read without blur */
+  --well: rgb(3 6 8 / 0.5); /* fields and recessed panes */
+  --blur-sm: blur(12px) saturate(140%);
+  --blur: blur(20px) saturate(150%);
+  --blur-lg: blur(24px) saturate(165%);
+
+  /* lines */
+  --line: rgb(255 255 255 / 0.075);
+  --line-strong: rgb(255 255 255 / 0.13);
+  --rim: linear-gradient(180deg, rgb(255 255 255 / 0.13), rgb(255 255 255 / 0.04) 38%, rgb(255 255 255 / 0.02) 70%, rgb(255 255 255 / 0.05));
+  --rim-lit: linear-gradient(180deg, rgb(39 217 232 / 0.4), rgb(255 255 255 / 0.07) 34%, rgb(255 255 255 / 0.03) 70%, rgb(255 255 255 / 0.06));
 
   /* depth */
-  --depth-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 20px -10px rgb(0 0 0 / 0.6);
-  --depth-2: 0 2px 6px rgb(0 0 0 / 0.35), 0 18px 40px -16px rgb(0 0 0 / 0.75);
-  --depth-3: 0 4px 12px rgb(0 0 0 / 0.4), 0 26px 56px -18px rgb(0 0 0 / 0.85);
+  --shadow-1: 0 1px 1px rgb(0 0 0 / 0.25), 0 6px 16px -8px rgb(0 0 0 / 0.55);
+  --shadow-2: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 40px -20px rgb(0 0 0 / 0.8);
+  --shadow-3: 0 2px 4px rgb(0 0 0 / 0.35), 0 24px 56px -22px rgb(0 0 0 / 0.9);
 
-  --r-field: 14px; --r-card: 30px; --r-inset: 18px; --r-cap: 999px;
+  /* shape and motion */
+  --r-xs: 8px;
+  --r-sm: 12px; /* fields */
+  --r-md: 16px; /* recessed panes, option rows */
+  --r-lg: 22px; /* cards */
+  --r-xl: 26px; /* the hero card, the dock */
+  --r-pill: 999px;
   --ctl-h: 44px;
-  --dur: 220ms; --ease: cubic-bezier(.2, .8, .2, 1); --spring: cubic-bezier(.34, 1.4, .64, 1);
-
-  --ok-soft: rgb(48 209 88 / 0.16);
-  --warn-soft: rgb(255 179 64 / 0.16);
-  --danger-soft: rgb(255 107 107 / 0.14);
-  --sunken: var(--recess);
+  --dur: 200ms;
+  --dur-slow: 300ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* kept for components that name them */
-  --bg: var(--env);
-  --surface: #000000;
-  --action: #ff6a3d;
-  --action-ink: #1c1c1e;
+  --surface: var(--bg-2);
+  --sunken: var(--well);
+  --action: var(--accent);
+  --action-ink: var(--accent-ink);
 }
 
 @theme inline {
-  --color-bg: var(--env);
+  --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-sunken: var(--sunken);
   --color-ink: var(--ink);
@@ -87,6 +99,7 @@
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
+  --color-teal: var(--teal);
   --color-action: var(--action);
   --color-action-ink: var(--action-ink);
   --color-ok: var(--ok);
@@ -98,6 +111,7 @@
   --font-sans: var(--font-text);
   --font-display: var(--font-display);
   --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
 }
 
 @layer base {
@@ -109,35 +123,26 @@
   body {
     margin: 0;
     color: var(--ink);
-    background-color: var(--env);
-    font: 400 16px/1.625 var(--font-text);
-    font-feature-settings: "ss01" 0;
+    background-color: var(--bg);
+    font: 400 16px/1.6 var(--font-text);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     -webkit-tap-highlight-color: transparent;
   }
-  /* The canvas: graphite, lit softly from above, so the black islands read as raised. */
+  /* The panel is a size container: layout follows the panel's width, not the window's. */
   #root {
-    background-image:
-      radial-gradient(120% 55% at 50% -12%, rgb(110 110 118 / 0.55), transparent 62%),
-      linear-gradient(180deg, #2c2c2e 0%, #1c1c1e 55%, #151517 100%);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    container: panel / inline-size;
   }
   h1,
   h2,
   h3 {
     font-family: var(--font-display);
     font-weight: var(--display-weight);
-    font-stretch: var(--display-stretch);
     letter-spacing: var(--display-tracking);
     text-wrap: balance;
-  }
-  /* View titles: italic serif, like a magazine standfirst. */
-  h1 {
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-weight: 400;
-    font-stretch: normal;
-    letter-spacing: -0.01em;
   }
   kbd,
   code {
@@ -149,10 +154,10 @@
   }
   :focus-visible {
     outline: 2px solid var(--accent);
-    outline-offset: 3px;
+    outline-offset: 2px;
   }
   ::selection {
-    background: rgb(255 106 61 / 0.32);
+    background: rgb(39 217 232 / 0.3);
   }
   input,
   textarea,
@@ -162,7 +167,7 @@
     color: inherit;
   }
   select option {
-    background: #161b22;
+    background: var(--bg-2);
     color: var(--ink);
   }
   [hidden] {
@@ -170,116 +175,416 @@
   }
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(255 255 255 / 0.2) transparent;
+    scrollbar-color: rgb(255 255 255 / 0.16) transparent;
   }
 }
 
 @layer components {
-  /* 3 · Glass: the one card material. Specular rim (::after), pointer highlight (::before). */
+  /* ───────── 1 · Atmosphere: the lit ground behind everything ───────── */
+  .fp-ambient {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(70% 42% at 88% -6%, rgb(39 217 232 / 0.17), transparent 70%),
+      radial-gradient(55% 38% at -12% 38%, rgb(58 166 161 / 0.11), transparent 72%),
+      radial-gradient(80% 40% at 50% 112%, rgb(39 217 232 / 0.07), transparent 70%),
+      linear-gradient(180deg, #0a0f13 0%, var(--bg) 55%, #070a0c 100%);
+  }
+  /* A faint drafting grid, only near the top, fading out. */
+  .fp-ambient::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.028) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: -1px -1px;
+    -webkit-mask-image: radial-gradient(120% 46% at 70% 0%, #000 0%, transparent 72%);
+    mask-image: radial-gradient(120% 46% at 70% 0%, #000 0%, transparent 72%);
+  }
+  /* A soft light behind the hero card; the card's glass blurs it. */
+  .fp-hero {
+    position: relative;
+    isolation: isolate;
+  }
+  .fp-hero::before {
+    content: "";
+    position: absolute;
+    inset: -12% 0 auto auto;
+    z-index: -1;
+    width: 72%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgb(39 217 232 / 0.32), rgb(58 166 161 / 0.12) 45%, transparent 70%);
+    filter: blur(18px);
+    pointer-events: none;
+  }
+
+  /* ───────── 2 · The shell: a top bar and a dock float over one scroll area ───────── */
+  .fp-shell {
+    --top-h: 64px;
+    --dock-h: 84px;
+    /* Sticky offsets count from inside the scroll area's padding, which already clears the dock. */
+    --bar-bottom: 0px;
+    --gutter: 16px;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    height: 100%;
+  }
+  .fp-stage {
+    position: relative;
+    min-height: 0;
+    height: 100%;
+  }
+  .fp-main {
+    height: 100%;
+    overflow-x: hidden; /* the hero's light may spread past the edge; never a sideways scroll */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-top: var(--top-h);
+    padding-bottom: calc(var(--dock-h) + 12px);
+    scroll-padding-top: calc(var(--top-h) + 12px);
+    scroll-padding-bottom: calc(var(--dock-h) + 88px);
+    outline: none;
+  }
+  /* The top bar: content scrolling under it blurs and fades out (progressive blur). */
+  .fp-top {
+    position: absolute;
+    inset: 0 0 auto 0;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    padding: 12px var(--gutter) 0;
+    pointer-events: none;
+  }
+  .fp-top > * {
+    pointer-events: auto;
+  }
+  /* The toolbar popup: a fixed frame (browsers cap popups at 800 x 600). */
+  html.fp-popup,
+  html.fp-popup body {
+    width: 400px;
+    height: 600px;
+  }
+  .fp-top--popup {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 6px;
+  }
+  /* A round glass icon button (the popup's "open in side panel"). */
+  .fp-iconbtn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--r-pill);
+    background: rgb(12 18 22 / 0.88);
+    color: var(--muted);
+    box-shadow: var(--shadow-2), inset 0 0 0 1px var(--line-strong);
+    cursor: pointer;
+    transition: color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+    touch-action: manipulation;
+  }
+  .fp-iconbtn:hover {
+    color: var(--accent);
+    box-shadow: var(--shadow-2), inset 0 0 0 1px var(--accent-line);
+  }
+  .fp-iconbtn:active {
+    transform: scale(0.94);
+  }
+  .fp-top::before,
+  .fp-dock::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .fp-top::before {
+    bottom: -18px;
+    background: linear-gradient(180deg, rgb(8 11 14 / 0.88), rgb(8 11 14 / 0.55) 60%, transparent);
+    -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent);
+    mask-image: linear-gradient(180deg, #000 50%, transparent);
+  }
+  .fp-dock {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 20;
+    padding: 0 12px 12px;
+    pointer-events: none;
+  }
+  .fp-dock::before {
+    top: -22px;
+    background: linear-gradient(0deg, rgb(8 11 14 / 0.97), rgb(8 11 14 / 0.88) 18%, rgb(8 11 14 / 0.5) 58%, transparent);
+    -webkit-mask-image: linear-gradient(0deg, #000 55%, transparent);
+    mask-image: linear-gradient(0deg, #000 55%, transparent);
+  }
+
+  /* The dock: a frosted bar of four tabs; one cyan glass indicator slides to the open tab. */
+  .fp-tablist {
+    --tabs: 4;
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: repeat(var(--tabs), minmax(0, 1fr));
+    padding: 6px;
+    border-radius: var(--r-xl);
+    background: var(--glass-3);
+    backdrop-filter: var(--blur-lg);
+    -webkit-backdrop-filter: var(--blur-lg);
+    box-shadow: var(--shadow-3), inset 0 0 0 1px var(--line-strong), inset 0 1px 0 rgb(255 255 255 / 0.06);
+    pointer-events: auto;
+  }
+  .fp-tab-indicator {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: -1;
+    width: calc((100% - 12px) / var(--tabs));
+    height: calc(100% - 12px);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgb(39 217 232 / 0.2), rgb(39 217 232 / 0.07));
+    box-shadow: inset 0 0 0 1px rgb(39 217 232 / 0.34), inset 0 1px 0 rgb(255 255 255 / 0.1), 0 8px 22px -10px rgb(39 217 232 / 0.55);
+    transform: translateX(calc(var(--i, 0) * 100%));
+    transition: transform var(--dur-slow) var(--ease);
+  }
+  .fp-tab {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 4px;
+    min-height: 56px;
+    padding: 6px 4px;
+    border-radius: 20px;
+    font: 400 12px/1 var(--font-mono);
+    letter-spacing: -0.01em;
+    text-transform: lowercase;
+    color: var(--muted);
+    transition: color var(--dur) var(--ease);
+    touch-action: manipulation;
+  }
+  .fp-tab svg {
+    width: 20px;
+    height: 20px;
+    transition: color var(--dur) var(--ease), transform var(--dur) var(--ease);
+  }
+  .fp-tab:hover {
+    color: var(--ink);
+  }
+  .fp-tab:active svg {
+    transform: scale(0.92);
+  }
+  .fp-tab[aria-selected="true"] {
+    color: var(--ink);
+  }
+  .fp-tab[aria-selected="true"] svg {
+    color: var(--accent);
+  }
+  .fp-tab:focus-visible {
+    outline-offset: -2px;
+  }
+
+  /* A view: one centred column; wider views opt in. Space between blocks is the gap. */
+  .fp-view {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 760px;
+    margin-inline: auto;
+    padding: 8px var(--gutter) 20px;
+  }
+  .fp-view--wide {
+    max-width: 1080px;
+  }
+  .fp-intro {
+    padding: 8px 4px 4px;
+  }
+  .fp-title {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 34px;
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+  }
+  .fp-lede {
+    margin-top: 8px;
+    font-size: 16px;
+    color: var(--muted);
+  }
+
+  /* ───────── 3 · Glass surfaces, three tiers ───────── */
   .fp-card,
-  .fp-ornament,
   .fp-chip {
     position: relative;
     isolation: isolate;
-    background: var(--mat);
+    background: var(--glass-1);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
-    box-shadow: var(--depth-2);
+    box-shadow: var(--shadow-2);
   }
   .fp-card {
-    border-radius: var(--r-card);
+    border-radius: var(--r-lg);
   }
+  /* Static rim (::after) and a faint cyan edge light under the pointer (::before). */
   .fp-card::after,
-  .fp-ornament::after,
-  .fp-chip::after,
-  .fp-btn--secondary::after {
+  .fp-card::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: var(--rim);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
   }
-  /* Gaze-style highlight: a soft light under the pointer (position set by useSpatialPointer). */
-  .fp-card::before,
-  .fp-btn::before,
-  .fp-tab::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(255 255 255 / 0.10), transparent 60%);
-    opacity: 0;
-    transition: opacity var(--dur) var(--ease);
-    pointer-events: none;
+  .fp-card::after {
+    background: var(--rim);
   }
-  .fp-card:hover::before,
-  .fp-btn:hover:not(:disabled)::before,
-  .fp-tab:hover::before {
+  .fp-card::before {
+    background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 0%), rgb(39 217 232 / 0.38), transparent 70%);
+    opacity: 0;
+    transition: opacity var(--dur-slow) var(--ease);
+  }
+  .fp-card:hover::before {
     opacity: 1;
   }
-
-  /* Thick material: a bar that floats over scrolling content must hide what passes under it. */
-  .fp-card.fp-thick {
-    background: rgb(19 25 33 / 0.97);
-    box-shadow: var(--depth-3);
+  /* Primary: the hero of a view. Thicker glass, a cyan-lit top edge, deeper shadow. */
+  .fp-card--raised {
+    border-radius: var(--r-xl);
+    background: var(--glass-2);
+    backdrop-filter: var(--blur-lg);
+    -webkit-backdrop-filter: var(--blur-lg);
+    box-shadow: var(--shadow-3);
+  }
+  .fp-card--raised::after {
+    background: var(--rim-lit);
+  }
+  /* A list inside a card: rows parted by hairlines. */
+  .fp-rows > * + * {
+    border-top: 1px solid var(--line);
   }
 
-  /* A recessed pane inside a card (custom facts, confirmations). */
+  /* Supporting: a recessed pane inside a card (custom facts, confirmations). */
   .fp-inset {
-    border-radius: var(--r-inset);
-    background: var(--recess);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.35), inset 0 0 0 1px rgb(255 255 255 / 0.05);
+    border-radius: var(--r-md);
+    background: var(--well);
+    border: 1px solid var(--line);
+  }
+  .fp-inset--danger {
+    border-color: rgb(255 123 123 / 0.4);
+    background: linear-gradient(180deg, rgb(255 123 123 / 0.08), rgb(255 123 123 / 0.03)), var(--well);
+  }
+  .fp-inset--warn {
+    border-color: rgb(246 185 85 / 0.4);
+    background: linear-gradient(180deg, rgb(246 185 85 / 0.08), rgb(246 185 85 / 0.03)), var(--well);
+  }
+  /* A card that reports a problem. */
+  .fp-card--alert::after {
+    background: linear-gradient(180deg, rgb(255 123 123 / 0.55), rgb(255 123 123 / 0.18));
   }
 
-  /* Small glass capsule (the "on this device" badge). */
-  .fp-chip {
+  /* Section headings inside cards. */
+  .fp-h2 {
+    font-size: 17px;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+  .fp-desc {
+    margin-top: 4px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  /* Small labels: lowercase monospace, like a terminal's menu line. */
+  .fp-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: -0.01em;
+    text-transform: lowercase;
+    line-height: 1.3;
+    color: var(--muted);
+  }
+  /* The wordmark: lowercase monospace after a glowing cyan dot. */
+  .fp-wordmark {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    min-height: 32px;
-    padding: 0 12px;
-    border-radius: var(--r-cap);
-    background: var(--mat-thin);
-    box-shadow: var(--depth-1);
-    font: 500 13px/1 var(--font-text);
+    gap: 9px;
+    font: 600 15px/1 var(--font-mono);
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .fp-wordmark::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px rgb(39 217 232 / 0.16), 0 0 12px rgb(39 217 232 / 0.65);
+  }
+  /* Empty states: a quiet line in the italic serif. */
+  .fp-empty {
+    font: italic 400 19px/1.3 var(--font-serif);
     color: var(--muted);
   }
 
-  /* Recessed fields: darker than the glass around them; focus lights the edge. */
+  /* ───────── 4 · Fields ───────── */
   .fp-input {
     width: 100%;
     min-height: var(--ctl-h);
     padding: 10px 14px;
     font: 400 16px/1.4 var(--font-text);
-    background: var(--recess);
+    background: var(--well);
     color: var(--ink);
-    border: 1px solid transparent;
-    border-radius: var(--r-field);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.4), inset 0 0 0 1px rgb(255 255 255 / 0.07);
-    transition: box-shadow var(--dur) var(--ease), background-color var(--dur) var(--ease);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    border-radius: var(--r-sm);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.3);
+    transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background-color var(--dur) var(--ease);
   }
   .fp-input:hover {
-    background: rgb(0 0 0 / 0.38);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.4), inset 0 0 0 1px rgb(255 255 255 / 0.14);
+    border-color: rgb(255 255 255 / 0.18);
   }
   .fp-input:focus-visible {
     outline: none;
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.4), inset 0 0 0 1px var(--accent), 0 0 0 4px rgb(255 106 61 / 0.18);
+    border-color: var(--accent);
+    background: rgb(3 8 10 / 0.62);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.3), 0 0 0 3px rgb(39 217 232 / 0.17);
   }
   /* A failed field: a 2px edge and the reason in words under it; colour is never the only sign. */
   .fp-input[aria-invalid="true"],
   .fp-input[aria-invalid="true"]:hover,
   .fp-input[aria-invalid="true"]:focus-visible {
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.4), inset 0 0 0 2px var(--danger), 0 0 0 4px rgb(255 158 158 / 0.14);
+    border-color: var(--danger);
+    box-shadow: inset 0 0 0 1px var(--danger), 0 0 0 3px rgb(255 123 123 / 0.14);
   }
   .fp-input::placeholder {
     color: var(--faint);
+  }
+  select.fp-input {
+    appearance: none;
+    padding-right: 40px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%239aa6af' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+  }
+  textarea.fp-input {
+    line-height: 1.55;
   }
   .fp-label {
     display: block;
@@ -287,8 +592,106 @@
     font: 500 14px/1.4 var(--font-text);
     color: var(--ink);
   }
+  .fp-hint {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
 
-  /* 4 · Controls: capsules. Lift toward you on hover, press in on click. */
+  /* Checkbox, radio and switch, drawn to match the glass. */
+  .fp-check,
+  .fp-radio,
+  .fp-switch {
+    appearance: none;
+    flex-shrink: 0;
+    margin: 0;
+    cursor: pointer;
+    background-color: var(--well);
+    border: 1.5px solid rgb(255 255 255 / 0.3);
+    transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), background-position var(--dur) var(--ease);
+  }
+  .fp-check,
+  .fp-radio {
+    width: 20px;
+    height: 20px;
+  }
+  .fp-check {
+    border-radius: 6px;
+  }
+  .fp-radio {
+    border-radius: 50%;
+  }
+  .fp-check:hover,
+  .fp-radio:hover,
+  .fp-switch:hover {
+    border-color: rgb(255 255 255 / 0.46);
+  }
+  .fp-check:checked {
+    border-color: var(--accent);
+    background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23061014' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E") center / 14px no-repeat;
+  }
+  .fp-radio:checked {
+    border-color: var(--accent);
+    background: radial-gradient(circle, var(--accent) 0 4.5px, transparent 5px), var(--well);
+  }
+  .fp-switch {
+    width: 44px;
+    height: 26px;
+    border-radius: var(--r-pill);
+    background-image: radial-gradient(circle, var(--muted) 0 9px, transparent 9.5px);
+    background-repeat: no-repeat;
+    background-size: 22px 22px;
+    background-position: 1px center;
+  }
+  .fp-switch:checked {
+    border-color: var(--accent);
+    background-color: var(--accent);
+    background-image: radial-gradient(circle, var(--accent-ink) 0 9px, transparent 9.5px);
+    background-position: calc(100% - 1px) center;
+  }
+
+  /* An option row: a radio or switch with its words; the chosen one lights cyan. */
+  .fp-option {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: var(--ctl-h);
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+    background: rgb(255 255 255 / 0.018);
+    cursor: pointer;
+    transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  }
+  .fp-option:hover {
+    border-color: var(--line-strong);
+    background: rgb(255 255 255 / 0.04);
+  }
+  .fp-option:has(:checked) {
+    border-color: rgb(39 217 232 / 0.45);
+    background: linear-gradient(180deg, rgb(39 217 232 / 0.1), rgb(39 217 232 / 0.035));
+    box-shadow: 0 10px 26px -18px rgb(39 217 232 / 0.7);
+  }
+  .fp-option:has(:focus-visible) {
+    border-color: var(--accent-line);
+  }
+  .fp-option > input {
+    margin-top: 2px;
+  }
+  .fp-option--switch {
+    align-items: center;
+    justify-content: space-between;
+  }
+  .fp-option--switch:has(:checked) {
+    border-color: var(--line);
+    background: rgb(255 255 255 / 0.018);
+    box-shadow: none;
+  }
+
+  /* ───────── 5 · Buttons and links ───────── */
   .fp-btn {
     position: relative;
     isolation: isolate;
@@ -297,147 +700,349 @@
     justify-content: center;
     gap: 8px;
     min-height: var(--ctl-h);
-    padding: 0 20px;
-    font: 500 16px/1 var(--font-text);
-    border-radius: var(--r-cap);
-    border: 0;
+    padding: 0 18px;
+    font: 500 15px/1 var(--font-text);
+    letter-spacing: -0.005em;
+    border-radius: var(--r-pill);
+    border: 1px solid transparent;
     cursor: pointer;
     white-space: nowrap;
+    text-decoration: none;
     transition:
-      transform var(--dur) var(--spring),
+      transform var(--dur) var(--ease),
       box-shadow var(--dur) var(--ease),
-      background-color var(--dur) var(--ease);
+      background-color var(--dur) var(--ease),
+      border-color var(--dur) var(--ease),
+      color var(--dur) var(--ease);
     touch-action: manipulation;
   }
   .fp-btn:hover:not(:disabled) {
-    transform: translateY(-1px) scale(1.02);
+    transform: translateY(-1px);
   }
   .fp-btn:active:not(:disabled) {
-    transform: scale(0.97);
-    transition-duration: 90ms;
+    transform: translateY(0) scale(0.98);
+    transition-duration: 80ms;
   }
   .fp-btn:disabled {
     cursor: not-allowed;
-    opacity: 0.4;
+    opacity: 0.45;
   }
-  /* Prominent: a bright capsule, the one most-forward thing in a view. */
+  .fp-btn:focus-visible {
+    outline-offset: 3px;
+  }
+  /* Primary: cyan, the one most-forward action of a view. */
   .fp-btn--primary {
-    background: var(--action);
-    color: var(--action-ink);
-    box-shadow: var(--depth-2), 0 0 0 1px rgb(255 106 61 / 0.5), 0 10px 28px -10px rgb(255 106 61 / 0.55);
-  }
-  .fp-btn--primary::before {
-    background: radial-gradient(160px circle at var(--mx, 50%) var(--my, 0%), rgb(255 255 255 / 0.28), transparent 70%);
+    background: linear-gradient(180deg, #52e3ee 0%, var(--accent) 52%, #1fc8d7 100%);
+    color: var(--accent-ink);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.42),
+      0 0 0 1px rgb(39 217 232 / 0.55),
+      0 10px 26px -14px rgb(39 217 232 / 0.75);
   }
   .fp-btn--primary:hover:not(:disabled) {
-    box-shadow: var(--depth-3), 0 0 0 1px rgb(255 106 61 / 0.6), 0 12px 32px -10px rgb(255 106 61 / 0.7);
+    background: linear-gradient(180deg, #74ebf3 0%, var(--accent-hi) 52%, #2bd2e0 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.5),
+      0 0 0 1px rgb(90 229 240 / 0.7),
+      0 14px 32px -14px rgb(39 217 232 / 0.9);
   }
+  /* Unavailable: plain glass and muted words, not a faded cyan. */
   .fp-btn--primary:disabled {
-    box-shadow: none;
+    opacity: 1;
+    background: rgb(255 255 255 / 0.06);
+    color: var(--muted);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
-  /* Glass capsule. */
+  /* Secondary: a clear glass capsule; its edge lights cyan on hover. */
   .fp-btn--secondary {
-    background: var(--mat-thick);
+    background: rgb(255 255 255 / 0.05);
+    border-color: var(--line-strong);
     color: var(--ink);
-    backdrop-filter: var(--blur);
-    -webkit-backdrop-filter: var(--blur);
-    box-shadow: var(--depth-1);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
   }
   .fp-btn--secondary:hover:not(:disabled) {
-    background: var(--mat-hover);
-    box-shadow: var(--depth-2);
+    background: rgb(255 255 255 / 0.08);
+    border-color: var(--accent-line);
   }
   .fp-btn--danger {
     background: var(--danger-soft);
+    border-color: rgb(255 123 123 / 0.36);
     color: var(--danger);
-    box-shadow: inset 0 0 0 1px rgb(255 158 158 / 0.4);
   }
   .fp-btn--danger:hover:not(:disabled) {
-    background: rgb(255 158 158 / 0.2);
+    background: rgb(255 123 123 / 0.18);
+    border-color: rgb(255 123 123 / 0.55);
   }
 
   .fp-link {
     color: var(--accent);
-    font-weight: 500;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    letter-spacing: -0.01em;
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 4px;
-    text-decoration-color: rgb(255 106 61 / 0.4);
-    transition: text-decoration-color var(--dur) var(--ease);
+    text-decoration-color: rgb(39 217 232 / 0.38);
+    transition: text-decoration-color var(--dur) var(--ease), color var(--dur) var(--ease);
     cursor: pointer;
     background: none;
     border: 0;
     padding: 0;
   }
   .fp-link:hover {
+    color: var(--accent-hi);
     text-decoration-color: currentColor;
   }
 
-  /* The tab ornament: a glass capsule floating below the window, icon over label. */
-  .fp-ornament {
-    display: flex;
-    gap: 2px;
-    padding: 6px;
-    border-radius: var(--r-cap);
-    background: #000;
-    box-shadow: var(--depth-3);
-  }
-  .fp-tab {
-    position: relative;
-    isolation: isolate;
-    flex: 1;
-    display: grid;
-    place-items: center;
-    gap: 2px;
-    min-height: 52px;
-    padding: 6px 4px;
-    border-radius: var(--r-cap);
+  /* ───────── 6 · Small parts ───────── */
+  .fp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: var(--r-pill);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
     font: 500 13px/1 var(--font-text);
     color: var(--muted);
-    transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease), transform var(--dur) var(--spring);
   }
-  .fp-tab svg {
-    width: 20px;
-    height: 20px;
+  .fp-badge {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 24px;
+    padding: 0 9px;
+    border-radius: var(--r-pill);
+    border: 1px solid currentColor;
+    font: 500 12px/1 var(--font-text);
+    letter-spacing: 0.01em;
   }
-  .fp-tab:hover {
+  .fp-badge--ok {
+    color: var(--ok);
+    background: var(--ok-soft);
+    border-color: rgb(74 222 128 / 0.3);
+  }
+  .fp-badge--warn {
+    color: var(--warn);
+    background: var(--warn-soft);
+    border-color: rgb(246 185 85 / 0.32);
+  }
+  .fp-badge--danger {
+    color: var(--danger);
+    background: var(--danger-soft);
+    border-color: rgb(255 123 123 / 0.32);
+  }
+  .fp-badge--neutral {
+    color: var(--muted);
+    background: rgb(255 255 255 / 0.04);
+    border-color: var(--line-strong);
+  }
+  .fp-kbd {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 6px;
+    border: 1px solid var(--line-strong);
+    border-bottom-width: 2px;
+    background: rgb(255 255 255 / 0.05);
+    font: 400 12.5px/1.5 var(--font-mono);
     color: var(--ink);
   }
-  .fp-tab:active {
-    transform: scale(0.96);
+  /* A thin bar for a download in progress. */
+  .fp-meter {
+    height: 6px;
+    overflow: hidden;
+    border-radius: var(--r-pill);
+    background: rgb(255 255 255 / 0.08);
   }
-  .fp-tab[aria-selected="true"] {
-    color: var(--ink);
-    background: var(--mat-thick);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 2px 8px -2px rgb(0 0 0 / 0.5);
+  /* The fill grows with transform (set --p from 0 to 1), so the browser never re-lays it out. */
+  .fp-meter > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--teal), var(--accent));
+    box-shadow: 0 0 12px rgb(39 217 232 / 0.5);
+    transform: scaleX(var(--p, 0));
+    transform-origin: left center;
+    transition: transform var(--dur-slow) var(--ease);
   }
 
-  /* The window's scroll edge: content fades as it scrolls out of view, top and bottom. */
-  .fp-scroll {
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 10px), transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 10px), transparent 100%);
+  /* Sticky save bar at the foot of a view, floating just above the dock. */
+  .fp-actionbar {
+    position: sticky;
+    bottom: var(--bar-bottom);
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 8px 8px 8px 18px;
+    border-radius: var(--r-lg);
+    background: var(--glass-3);
+    backdrop-filter: var(--blur-lg);
+    -webkit-backdrop-filter: var(--blur-lg);
+    box-shadow: var(--shadow-3), inset 0 0 0 1px var(--line-strong), inset 0 1px 0 rgb(255 255 255 / 0.06);
   }
 
-  /* A view settles into place when its tab opens. */
+  /* A view settles into place when its tab opens (transform only, so the glass keeps its blur). */
   .fp-settle {
-    animation: fp-settle 320ms var(--ease) both;
+    animation: fp-settle 260ms var(--ease) both;
   }
   @keyframes fp-settle {
     from {
-      opacity: 0;
-      transform: translateY(6px) scale(0.985);
+      transform: translateY(8px);
     }
+  }
+
+  /* ───────── 7 · The status pill ───────── */
+  .fp-island {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 42px;
+    padding: 8px 16px 8px 9px;
+    border-radius: var(--r-pill);
+    background: rgb(12 18 22 / 0.9);
+    backdrop-filter: var(--blur-lg);
+    -webkit-backdrop-filter: var(--blur-lg);
+    color: var(--ink);
+    box-shadow: var(--shadow-2), inset 0 0 0 1px var(--line-strong), inset 0 1px 0 rgb(255 255 255 / 0.07);
+    /* Morph: animate between the compact width and the full width. */
+    interpolate-size: allow-keywords;
+    transition:
+      width 480ms var(--ease),
+      padding 480ms var(--ease),
+      box-shadow var(--dur-slow) var(--ease);
+  }
+  .fp-island--running,
+  .fp-island--done,
+  .fp-island--error {
+    width: 100%;
+    max-width: 560px;
+    padding-inline: 10px 18px;
+  }
+  .fp-island--running {
+    box-shadow: var(--shadow-2), inset 0 0 0 1px rgb(39 217 232 / 0.42), 0 0 28px -8px rgb(39 217 232 / 0.55);
+  }
+  .fp-island--done {
+    box-shadow: var(--shadow-2), inset 0 0 0 1px rgb(74 222 128 / 0.3);
+  }
+  .fp-island--error {
+    box-shadow: var(--shadow-2), inset 0 0 0 1px rgb(246 185 85 / 0.36);
+  }
+
+  /* ───────── 8 · Wider panels ───────── */
+  /* Two columns for a view's idle layout (Fill) once there is room. */
+  .fp-split {
+    display: grid;
+    gap: 12px;
+    align-items: start;
+  }
+  .fp-stack {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+}
+
+/* Narrow panels: tighter edges and a lighter title. */
+@container panel (max-width: 359px) {
+  .fp-shell {
+    --gutter: 12px;
+  }
+  .fp-title {
+    font-size: 30px;
+  }
+  .fp-tab {
+    font-size: 11.5px;
+  }
+}
+
+/* Wide panels: the dock becomes a sidebar on the left; views get more room. */
+@container panel (min-width: 760px) {
+  .fp-shell {
+    --gutter: 28px;
+    grid-template-columns: 232px minmax(0, 1fr);
+  }
+  .fp-main {
+    padding-bottom: 28px;
+    scroll-padding-bottom: 96px;
+  }
+  .fp-dock {
+    position: relative;
+    inset: auto;
+    padding: calc(var(--top-h) + 8px) 0 16px 16px;
+  }
+  .fp-dock::before {
+    display: none;
+  }
+  .fp-tablist {
+    --step: 50px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: 46px;
+    row-gap: 4px;
+    padding: 10px;
+    border-radius: var(--r-lg);
+  }
+  .fp-tab-indicator {
+    top: 10px;
+    left: 10px;
+    width: calc(100% - 20px);
+    height: 46px;
+    border-radius: 14px;
+    transform: translateY(calc(var(--i, 0) * var(--step)));
+  }
+  .fp-tab {
+    grid-auto-flow: column;
+    justify-content: start;
+    gap: 12px;
+    min-height: 46px;
+    padding: 0 14px;
+    border-radius: 14px;
+    font-size: 13px;
+  }
+  .fp-title {
+    font-size: 40px;
+  }
+}
+@container panel (min-width: 1000px) {
+  .fp-split {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 16px;
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .fp-card,
-  .fp-ornament,
   .fp-chip,
-  .fp-btn--secondary {
+  .fp-tablist,
+  .fp-actionbar,
+  .fp-island {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background-color: #1a2029;
+    background: var(--bg-2);
+  }
+  .fp-top::before,
+  .fp-dock::before {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--bg);
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .fp-card,
+  .fp-tablist,
+  .fp-actionbar,
+  .fp-island,
+  .fp-btn {
+    border: 1px solid CanvasText;
+  }
+  .fp-tab[aria-selected="true"] {
+    outline: 2px solid Highlight;
   }
 }
 
@@ -450,7 +1055,8 @@
   }
   .fp-btn:hover:not(:disabled),
   .fp-btn:active:not(:disabled),
-  .fp-tab:active {
+  .fp-iconbtn:active,
+  .fp-tab:active svg {
     transform: none;
   }
 }
@@ -465,57 +1071,14 @@
   animation: fp-spin 0.9s linear infinite;
 }
 
-/* ───────── The Dynamic Island ───────── */
-.fp-island {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: fit-content;
-  max-width: 100%;
-  min-height: 42px;
-  padding: 9px 16px 9px 10px;
-  border-radius: 999px;
-  background: #000;
-  color: var(--ink);
-  box-shadow: var(--depth-2), inset 0 0 0 1px rgb(255 255 255 / 0.08);
-  /* Morph: animate between the compact width and the full width with a spring. */
-  interpolate-size: allow-keywords;
-  transition:
-    width 520ms var(--spring),
-    padding 520ms var(--spring),
-    background-color var(--dur) var(--ease);
-}
-.fp-island--running,
-.fp-island--done,
-.fp-island--error {
-  width: 100%;
-  padding-inline: 12px 18px;
-}
-.fp-island--running {
-  box-shadow: var(--depth-2), inset 0 0 0 1px rgb(255 106 61 / 0.35), 0 0 24px -6px rgb(255 106 61 / 0.45);
-}
-.fp-ring-live {
-  animation: fp-pulse 1.6s ease-in-out infinite;
-}
-@keyframes fp-pulse {
-  50% {
-    opacity: 0.6;
-    transform: scale(0.92);
+/* Wide panels: the sidebar sits in the first column, the views in the second. */
+@container panel (min-width: 760px) {
+  .fp-dock {
+    grid-column: 1;
+    grid-row: 1;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .fp-island {
-    transition: none;
+  .fp-stage {
+    grid-column: 2;
+    grid-row: 1;
   }
-}
-
-/* Section labels: monospace, uppercase, widely spaced (after your reference). */
-.fp-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  font-style: normal;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 1.3;
 }

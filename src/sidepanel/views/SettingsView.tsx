@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { sendToWorker } from "../../shared/messages";
 import { MODELS } from "../../shared/models";
 import { downloadOnDeviceModel, onDeviceStatus, type OnDeviceStatus } from "../../shared/ondevice";
@@ -8,6 +8,7 @@ import { apiKeyProblem } from "../../shared/validate";
 import { Button, Section, StatusLine, TextField, type Tone } from "../components/ui";
 
 type Line = { tone: Tone; text: string } | null;
+const pct = new Intl.NumberFormat(undefined, { style: "percent", maximumFractionDigits: 0 });
 
 export function SettingsView({
   settings,
@@ -21,8 +22,11 @@ export function SettingsView({
   hasApiKey: boolean;
 }) {
   return (
-    <div>
-      <h1 className="px-4 pt-5 text-[28px] leading-[1.1]">Settings</h1>
+    <div className="fp-view">
+      <div className="fp-intro">
+        <h1 className="fp-title">Settings</h1>
+        <p className="fp-lede">Your key, the model that fills forms, and the data kept in this browser.</p>
+      </div>
       <ApiKeySection settings={settings} hasApiKey={hasApiKey} />
       <ModelSection settings={settings} />
       <PageSection settings={settings} />
@@ -108,24 +112,31 @@ function ApiKeySection({ settings, hasApiKey }: { settings: Settings; hasApiKey:
         </>
       }
     >
-      <p className="text-[16px]">
-        {hasApiKey ? (
-          <>
-            <span className="font-medium text-ok">Key saved</span>{" "}
-            <span className="text-muted">
-              ending in <span translate="no" className="font-mono">{savedTail}</span>
-              {settings.keyStorage === "local" ? ", kept on this device." : ", forgotten when the browser closes."}
-            </span>
-          </>
-        ) : (
-          <span className="text-muted">No key saved yet.</span>
-        )}
+      <p className="fp-inset flex items-start gap-3 px-4 py-3 text-[15px]">
+        <span
+          aria-hidden="true"
+          className={`mt-[7px] size-2 shrink-0 rounded-full ${hasApiKey ? "bg-ok shadow-[0_0_8px_var(--ok)]" : "bg-white/25"}`}
+        />
+        <span className="min-w-0">
+          {hasApiKey ? (
+            <>
+              <span className="font-medium text-ok">Key saved</span>{" "}
+              <span className="text-muted">
+                ending in <span translate="no" className="font-mono text-ink">{savedTail}</span>
+                {settings.keyStorage === "local" ? ", kept on this device." : ", forgotten when the browser closes."}
+              </span>
+            </>
+          ) : (
+            <span className="text-muted">No key saved yet.</span>
+          )}
+        </span>
       </p>
 
       <div>
         <div className="flex items-end gap-2">
           <TextField
             id="api-key"
+            name="api-key"
             className="flex-1"
             label={hasApiKey ? "Replace the key" : "API key"}
             type={show ? "text" : "password"}
@@ -151,8 +162,8 @@ function ApiKeySection({ settings, hasApiKey }: { settings: Settings; hasApiKey:
         )}
       </div>
 
-      <fieldset>
-        <legend className="mb-1.5 text-[14px] font-medium">Keep the key</legend>
+      <fieldset className="m-0 grid min-w-0 gap-2 border-0 p-0">
+        <legend className="fp-label">Keep the key</legend>
         <RadioRow
           name="key-storage"
           checked={settings.keyStorage === "session"}
@@ -177,13 +188,13 @@ function ApiKeySection({ settings, hasApiKey }: { settings: Settings; hasApiKey:
           {busy === "test" ? "Testing…" : "Test key"}
         </Button>
         {hasApiKey && !confirmRemove && (
-          <button type="button" className="fp-link ml-auto min-h-11 text-[14px]" onClick={() => setConfirmRemove(true)}>
+          <button type="button" className="fp-link ml-auto min-h-11 text-[13px]" onClick={() => setConfirmRemove(true)}>
             Remove key
           </button>
         )}
       </div>
       {hasApiKey && confirmRemove && (
-        <div className="fp-inset p-4 ring-1 ring-danger/50">
+        <div className="fp-inset fp-inset--danger p-4">
           <p className="text-[16px]">Remove the saved key? You will need to paste it again to fill pages.</p>
           <div className="mt-3 flex gap-2">
             <Button variant="danger" onClick={() => void onRemove()}>
@@ -208,7 +219,7 @@ function ModelSection({ settings }: { settings: Settings }) {
   }
   return (
     <Section title="Model" description="What fills your forms. The two free options need no key; Claude models use your Anthropic key and you pay per use.">
-      <fieldset>
+      <fieldset className="m-0 grid min-w-0 gap-2 border-0 p-0">
         <legend className="sr-only">Model</legend>
         {MODELS.map((m) => (
           <RadioRow
@@ -259,20 +270,20 @@ function OnDeviceSetup() {
     unsupported: "This browser has no built-in AI. Use Chrome 138 or newer on Windows, macOS or Linux. Until then FormPilot uses Basic mode.",
   };
   return (
-    <div className="fp-inset mt-3 grid gap-3 p-4" aria-live="polite">
+    <div className="fp-inset grid gap-3 p-4" aria-live="polite">
       <p className="text-[14px] text-ink">
-        {progress !== null ? `Downloading… ${Math.round(progress * 100)}%` : text[status]}
+        {progress !== null ? `Downloading… ${pct.format(progress)}` : text[status]}
       </p>
       {progress !== null && (
         <div
-          className="h-2 overflow-hidden rounded-full bg-sunken"
+          className="fp-meter"
           role="progressbar"
           aria-label="Model download"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={Math.round(progress * 100)}
         >
-          <div className="h-full rounded-full bg-[var(--action)] transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${Math.round(progress * 100)}%` }} />
+          <span style={{ "--p": progress } as CSSProperties} />
         </div>
       )}
       {(status === "downloadable" || status === "downloading") && progress === null && (
@@ -297,19 +308,20 @@ function PageSection({ settings }: { settings: Settings }) {
   }
   return (
     <Section title="On the page" description="FormPilot fills fields and stops. It never presses Submit.">
-      <label className="flex min-h-11 cursor-pointer items-start gap-3">
-        <input
-          type="checkbox"
-          className="mt-1 size-[18px] shrink-0 accent-[var(--action)]"
-          checked={settings.highlightFields}
-          onChange={(e) => void toggle(e.target.checked)}
-        />
-        <span>
+      <label className="fp-option fp-option--switch">
+        <span className="min-w-0">
           <span className="block text-[16px] font-medium">Outline filled fields</span>
           <span className="block text-[14px] text-muted">
             Green for answers from your profile, amber for drafted answers to check.
           </span>
         </span>
+        <input
+          type="checkbox"
+          role="switch"
+          className="fp-switch"
+          checked={settings.highlightFields}
+          onChange={(e) => void toggle(e.target.checked)}
+        />
       </label>
       <StatusLine tone={line?.tone}>{line?.text}</StatusLine>
     </Section>
@@ -388,7 +400,7 @@ function DataSection({ profile, resume }: { profile: Profile; resume: Resume }) 
       </div>
 
       {pendingImport && (
-        <div className="fp-inset p-4 ring-1 ring-warn/50">
+        <div className="fp-inset fp-inset--warn p-4">
           <p className="text-[16px]">
             Replace your profile and resume with <span className="font-medium">{pendingImport.name}</span>?
           </p>
@@ -407,7 +419,7 @@ function DataSection({ profile, resume }: { profile: Profile; resume: Resume }) 
             Delete all data
           </Button>
         ) : (
-          <div className="fp-inset p-4 ring-1 ring-danger/50">
+          <div className="fp-inset fp-inset--danger p-4">
             <p className="text-[16px]">
               Delete your profile, resume, API key and settings from this device? This cannot be undone.
             </p>
@@ -441,17 +453,11 @@ function RadioRow({
   detail?: string;
 }) {
   return (
-    <label className="flex min-h-11 cursor-pointer items-start gap-3 py-1.5">
-      <input
-        type="radio"
-        name={name}
-        checked={checked}
-        onChange={onChange}
-        className="mt-1 size-[18px] shrink-0 accent-[var(--action)]"
-      />
-      <span>
-        <span className="block text-[16px] font-medium">{label}</span>
-        {detail && <span className="block text-[14px] text-muted">{detail}</span>}
+    <label className="fp-option">
+      <input type="radio" name={name} checked={checked} onChange={onChange} className="fp-radio" />
+      <span className="min-w-0">
+        <span className="block text-[15px] leading-snug font-medium">{label}</span>
+        {detail && <span className="mt-0.5 block text-[14px] leading-snug text-muted">{detail}</span>}
       </span>
     </label>
   );

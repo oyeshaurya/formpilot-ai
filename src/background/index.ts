@@ -13,8 +13,9 @@ import { clearRun, getRun, sendToTab, showField, startFill, undoFields } from ".
 const MENU_ID = "formpilot-fill";
 
 async function setup(): Promise<void> {
-  // Toolbar click opens the side panel.
-  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  // Toolbar click opens the popup (manifest default_popup), not the side panel. The browser keeps this
+  // setting across updates, so it is set to false explicitly for installs that had it on.
+  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(() => undefined);
   // Right-click on a page or field: a user gesture that also grants activeTab for that tab.
   await chrome.contextMenus.removeAll();
   chrome.contextMenus.create({ id: MENU_ID, title: "Fill this form with FormPilot", contexts: ["editable", "page"] });

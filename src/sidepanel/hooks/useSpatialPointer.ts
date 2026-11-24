@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 
-const SURFACES = ".fp-card, .fp-btn, .fp-tab";
+const SURFACES = ".fp-card";
 
 /**
- * Gaze-style highlight: writes the pointer position into --mx / --my on the
- * glass surface under it, so its ::before light follows the pointer.
+ * Edge light: writes the pointer position into --mx / --my on the glass card
+ * under it, so the cyan light on its rim (::before) follows the pointer.
  * One delegated listener, batched to one write per frame; mouse only
  * (touch and pen leave the highlight off).
  */

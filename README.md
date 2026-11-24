@@ -11,7 +11,7 @@ npm install
 npm run build          # typecheck + build into dist/
 ```
 
-Load `dist/` in **Chrome** (`chrome://extensions`) or **Edge** (`edge://extensions`): turn on Developer mode → **Load unpacked** → pick `dist`. Click the toolbar icon to open the side panel, add your profile (and optionally an Anthropic API key for drafted answers; without one, free Basic mode fills facts only), then open any form and press **Fill this page** (or **Alt+Shift+F**, or right-click a field).
+Load `dist/` in **Chrome** (`chrome://extensions`) or **Edge** (`edge://extensions`): turn on Developer mode → **Load unpacked** → pick `dist`. Click the toolbar icon to open FormPilot as a popup (its side-panel button moves it into the side panel, which stays open while you use the page), add your profile (and optionally an Anthropic API key for drafted answers; without one, free Basic mode fills facts only), then open any form and press **Fill this page** (or **Alt+Shift+F**, or right-click a field).
 
 ## Commands
 

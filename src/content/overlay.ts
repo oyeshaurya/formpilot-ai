@@ -67,7 +67,7 @@ export function flash(id: string): boolean {
   const t = target(el) as HTMLElement;
   t.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   const prev = t.style.getPropertyValue("box-shadow");
-  t.style.setProperty("box-shadow", "0 0 0 6px rgba(111, 227, 211, 0.55)", "important");
+  t.style.setProperty("box-shadow", "0 0 0 6px rgba(39, 217, 232, 0.5)", "important");
   setTimeout(() => {
     if (prev) t.style.setProperty("box-shadow", prev);
     else t.style.removeProperty("box-shadow");
@@ -86,19 +86,22 @@ const BAR_CSS = `
   position: fixed; right: 16px; bottom: 16px; z-index: 2147483647;
   display: flex; align-items: center; gap: 10px; max-width: min(420px, calc(100vw - 32px));
   padding: 8px 8px 8px 16px; border-radius: 999px;
-  background: rgba(17, 22, 29, 0.94); color: #f4f7fa;
+  background: rgba(10, 15, 19, 0.86); color: #f1f5f7;
+  -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
   font: 500 14px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
-  box-shadow: 0 2px 4px rgba(0,0,0,.3), 0 18px 44px -18px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.12);
+  box-shadow: 0 2px 4px rgba(0,0,0,.3), 0 18px 44px -18px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.13), inset 0 1px 0 rgba(39,217,232,.25);
 }
 .text { flex: 1; min-width: 0; }
-.muted { color: rgba(226,233,240,.75); font-weight: 400; }
+.muted { color: #9aa6af; font-weight: 400; }
 button {
   all: unset; box-sizing: border-box; cursor: pointer; min-height: 36px; padding: 0 14px; border-radius: 999px;
   font: 500 14px/1 system-ui, -apple-system, "Segoe UI", sans-serif; white-space: nowrap;
-  background: rgba(255,255,255,.12); color: #f4f7fa;
+  background: rgba(255,255,255,.06); color: #f1f5f7; box-shadow: inset 0 0 0 1px rgba(255,255,255,.13);
+  transition: background-color .2s, box-shadow .2s;
 }
-button:hover { background: rgba(255,255,255,.2); }
-button:focus-visible { outline: 2px solid #6fe3d3; outline-offset: 2px; }
+button:hover { background: rgba(255,255,255,.1); box-shadow: inset 0 0 0 1px rgba(39,217,232,.45); }
+button:focus-visible { outline: 2px solid #27d9e8; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }
 .x { min-width: 36px; padding: 0; text-align: center; font-size: 18px; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 4px 1px 0; vertical-align: middle; }
 `;

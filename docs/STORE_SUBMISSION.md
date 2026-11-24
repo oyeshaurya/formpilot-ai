@@ -52,7 +52,7 @@ Bump `version` in `package.json` for every later upload; the stores reject a ver
 | `activeTab` | Gives FormPilot access to the current tab only after the user clicks the toolbar button, presses the shortcut or uses the right-click menu, so it can read the form the user asked to fill. |
 | `scripting` | Injects FormPilot's own bundled script into that tab, on demand, to read the form fields and write the answers. Nothing is injected on pages the user has not asked to fill. |
 | `storage` | Keeps the user's profile, resume and settings on the device, and the progress of a fill so the side panel can show it. |
-| `sidePanel` | The side panel is where the user edits the profile, starts a fill and reviews each answer. |
+| `sidePanel` | The toolbar popup can move FormPilot into the side panel, which stays open while the user works on the page; the shortcut and the right-click menu also open it, so the user can review each answer as the form fills. |
 | `contextMenus` | Adds "Fill this form with FormPilot" to the right-click menu on pages and form fields. |
 | Host `https://api.anthropic.com/*` | The only server the extension contacts: Anthropic's API, called with the user's own API key to map their details onto the form and draft short answers. |
 | Optional hosts `https://*/*`, `http://*/*` | Requested at run time, only if the user clicks "Allow on websites" after a fill started from the side panel could not reach the page (a click inside the side panel does not always grant activeTab). Not granted at install. |
@@ -76,7 +76,7 @@ Bump `version` in `package.json` for every later upload; the stores reject a ver
 
 ```
 FormPilot fills forms with the user's own Anthropic API key (BYOK). To test:
-1. Open the side panel (toolbar icon). Profile tab: enter a name and email, Save profile.
+1. Click the FormPilot toolbar icon (it opens a popup). Profile tab: enter a name and email, Save profile.
 2. Settings tab: paste this test key, Save key, then Test key:  <paste a key with a low monthly spend limit>
 3. Open any job application or sign-up form (for example a public Google Form), then Fill tab → Fill this page.
    If asked, click "Allow on websites" (optional permission), or press Alt+Shift+F on the page.

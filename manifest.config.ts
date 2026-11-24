@@ -25,9 +25,12 @@ export default defineManifest({
   },
   action: {
     default_title: "Open FormPilot AI",
+    // The toolbar icon opens a popup, like other extensions; the popup can move FormPilot into the side panel.
+    default_popup: "src/sidepanel/popup.html",
     default_icon: {
       16: "icons/icon-16.png",
       32: "icons/icon-32.png",
+      48: "icons/icon-48.png",
     },
   },
   side_panel: {
