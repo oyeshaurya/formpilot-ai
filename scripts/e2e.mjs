@@ -275,6 +275,88 @@ try {
   check("Basic mode fills Aadhaar from your saved fact", basicState.aadhaar === "1234 5678 9012", basicState.aadhaar);
   check("Basic mode sends nothing to Anthropic", !run?.usage);
 
+  /* 9c · a Google Forms page (ARIA drop-downs, checkbox lists, radio groups), Basic mode */
+  await evaluate(
+    panel.session,
+    `chrome.storage.local.set({ "fp:profile": {
+      personal: { firstName: "Shaurya", lastName: "Verma", dateOfBirth: "2004-05-17", gender: "Male", nationality: "Indian",
+                  phone: "+91 77038 19673", fatherName: "Rakesh Verma" },
+      address: { country: "India", district: "Chengalpattu", postalCode: "603203" }, links: {},
+      work: { skills: "TypeScript, Python, React" },
+      education: { degree: "B.Tech", highestQualification: "Bachelor's degree", grade: "8.9" },
+      customFacts: [{ id: "aad", label: "Aadhaar Card", value: "538942581375" }] } })`,
+  );
+  const gform = await open(`http://localhost:${PORT}/gform.html`);
+  await wait(1200);
+  const gTab = await evaluate(panel.session, `chrome.tabs.query({ url: "http://localhost:${PORT}/gform.html" }).then(t => t[0].id)`);
+  await evaluate(panel.session, `chrome.runtime.sendMessage({ type: "FILL_PAGE", tabId: ${gTab} })`);
+  run = await waitRun(panel, gTab);
+  check("Google Forms page fills", run?.status === "done", `${run?.status} ${run?.error?.message ?? ""}`);
+  const g = await evaluate(gform.session, `gformState()`);
+  check("GF: first and last name", g.first === "Shaurya" && g.last === "Verma", `${g.first} ${g.last}`);
+  check("GF: no middle name invented", g.middle === "", g.middle);
+  check("GF: alternate phone not copied from main", g.alt === "" && g.phone === "+91 77038 19673", `alt="${g.alt}"`);
+  check("GF: date of birth (sub-label 'Date')", g.dob === "2004-05-17", g.dob);
+  check("GF: gender radio from profile", g.gender === "Male", g.gender);
+  check("GF: nationality drop-down", g.nat === "Indian", g.nat);
+  check("GF: country drop-down", g.country === "India", g.country);
+  check("GF: highest qualification drop-down", g.hq === "Bachelor's degree", g.hq);
+  check("GF: skills ticked, combined option counts", JSON.stringify(g.skills) === JSON.stringify(["JavaScript / TypeScript", "Python"]), JSON.stringify(g.skills));
+  check("GF: CGPA from profile", g.cgpa === "8.9", g.cgpa);
+  check("GF: Class 10 marks not given the degree CGPA", g.c10 === "", g.c10);
+  check("GF: father's name, not his occupation", g.father === "Rakesh Verma" && g.focc === "", `${g.father} / ${g.focc}`);
+  check("GF: declaration left for you", g.decl === false);
+  check("GF: district and PIN code", g.district === "Chengalpattu" && g.pin === "603203", `${g.district} / ${g.pin}`);
+  check("GF: Aadhaar from a fact named Aadhaar Card", g.aad === "538942581375", g.aad);
+  await shot(gform.session, "5-google-form.png");
+  await evaluate(panel.session, `chrome.runtime.sendMessage({ type: "UNDO", tabId: ${gTab} })`);
+  await wait(2500);
+  const gu = await evaluate(gform.session, `gformState()`);
+  check("GF: undo resets drop-downs and boxes", gu.nat === "" && gu.country === "" && gu.hq === "" && gu.skills.length === 0 && gu.first === "", JSON.stringify(gu));
+
+  /* 9d · On-device AI: the worker asks the side panel, which runs the browser's model (a stand-in here) */
+  await evaluate(panel.session, `chrome.storage.local.set({ "fp:settings": { model: "on-device", keyStorage: "session", highlightFields: true, connection: { mode: "byok" } } })`);
+  await evaluate(
+    panel.session,
+    `(() => {
+      window.__lmCalls = 0;
+      const session = {
+        async prompt(input) {
+          window.__lmCalls++;
+          const fields = JSON.parse(input.slice(input.indexOf("<fields>") + 8, input.indexOf("</fields>")));
+          const mappings = [], unmapped = [];
+          for (const f of fields) {
+            const v = /role/i.test(f.label) ? "Staff Engineer" : /native/i.test(f.label) ? "Mumbai" : null;
+            if (v) mappings.push({ fieldId: f.id, value: v, values: [], source: "profile", confidence: "medium", reasoning: "From your resume" });
+            else unmapped.push({ fieldId: f.id, reason: "Not in your profile" });
+          }
+          return JSON.stringify({ mappings, unmapped });
+        },
+        async clone() { return session; },
+        destroy() {},
+      };
+      globalThis.LanguageModel = { availability: async () => "available", create: async () => session };
+      return true;
+    })()`,
+  );
+  await evaluate(panel.session, `chrome.runtime.sendMessage({ type: "FILL_PAGE", tabId: ${gTab} })`);
+  run = await waitRun(panel, gTab);
+  const od = await evaluate(gform.session, `gformState()`);
+  check("on-device fill finishes", run?.status === "done" && run.model === "on-device", `${run?.status} ${run?.model} ${run?.notice ?? ""} ${run?.error?.message ?? ""}`);
+  check("on-device: rules still fill the facts", od.first === "Shaurya" && od.country === "India" && od.pin === "603203", JSON.stringify({ first: od.first, country: od.country, pin: od.pin }));
+  check("on-device: model fills what rules missed, from your resume", od.role === "Staff Engineer", od.role);
+  check("on-device: invented value returned to you", od.native === "" && (run?.unmapped ?? []).some((u) => /Not found in your profile or resume/.test(u.reason)), od.native);
+  check("on-device: only the gaps went to the model", (await evaluate(panel.session, "window.__lmCalls")) === 1);
+  check("on-device: no middle name, no copied phone", od.middle === "" && od.alt === "");
+  await evaluate(panel.session, `chrome.runtime.sendMessage({ type: "UNDO", tabId: ${gTab} })`);
+  await wait(2500);
+  await evaluate(panel.session, "delete globalThis.LanguageModel, true");
+  await evaluate(panel.session, `chrome.runtime.sendMessage({ type: "FILL_PAGE", tabId: ${gTab} })`);
+  run = await waitRun(panel, gTab);
+  check("on-device unavailable falls back to Basic with a note", run?.status === "done" && run.model === "basic" && /On-device AI was not used/.test(run.notice ?? ""), run?.notice);
+  await evaluate(panel.session, `chrome.runtime.sendMessage({ type: "UNDO", tabId: ${gTab} })`);
+  await wait(1500);
+
   /* 10 · browser pages are refused with a clear reason */
   await open("edge://version");
   await wait(600);
@@ -309,6 +391,18 @@ try {
   check("Word title, headings and list kept", /^# Priya Sharma/m.test(docx.text) && /^## Experience/m.test(docx.text) && /^- Cut form drop-off/m.test(docx.text));
   writeFileSync(path.join(SHOTS, "3-imported-pdf.md"), pdf.text);
   writeFileSync(path.join(SHOTS, "4-imported-docx.md"), docx.text);
+
+  /* 10b · the toolbar popup: the same app in a 400 x 600 frame, with a way into the side panel */
+  const popup = await open(`chrome-extension://${extId}/src/sidepanel/popup.html`);
+  await wait(900);
+  const pop = await evaluate(
+    popup.session,
+    `({ marked: document.documentElement.classList.contains("fp-popup"), side: !!document.querySelector('[aria-label="Open in side panel"]'), tabs: document.querySelectorAll('[role="tab"]').length, w: document.body.getBoundingClientRect().width, h: document.body.getBoundingClientRect().height })`,
+  );
+  check("popup page is the popup", pop?.marked === true, JSON.stringify(pop));
+  check("popup offers the side panel", pop?.side === true);
+  check("popup has the four tabs", pop?.tabs === 4);
+  check("popup frame is 400 x 600", Math.round(pop?.w) === 400 && Math.round(pop?.h) === 600, `${pop?.w} x ${pop?.h}`);
 
   /* 11 · no errors in the panel */
   const panelErrors = await evaluate(panel.session, `window.__fpErrors ?? []`);

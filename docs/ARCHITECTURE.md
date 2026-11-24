@@ -106,4 +106,4 @@ FormPilot AI/
 | Tailwind v4 (`@tailwindcss/vite`) | Tokens in CSS (`@theme`), no config file, no runtime. |
 | zod 4 | One schema for storage validation, import validation and (M3) the Claude structured-output schema via `zodOutputFormat`. |
 | `@anthropic-ai/sdk` in the service worker | Typed errors (`RateLimitError` …), retries, `messages.parse()` with structured outputs. `dangerouslyAllowBrowser: true` sends `anthropic-dangerous-direct-browser-access: true`. |
-| Instrument Sans (+ DM Mono for keys), bundled | From the design-taste-frontend skill's catalogue (docs/DESIGN.md); shipped inside the extension via Fontsource, so no remote font requests. |
+| Manrope (+ JetBrains Mono for labels, numbers and keys), bundled | From the design-taste-frontend skill's catalogue (docs/DESIGN.md); shipped inside the extension via Fontsource, so no remote font requests. |

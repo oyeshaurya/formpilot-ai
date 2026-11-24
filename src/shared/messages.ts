@@ -9,7 +9,7 @@
  * and the side panel renders from there, so a restarted worker or a reopened
  * panel loses nothing.
  */
-import type { FieldDescriptor, FieldMapping, PageContext } from "./schema";
+import type { FieldDescriptor, FieldMapping, FillResponse, PageContext, Profile, Resume } from "./schema";
 
 /* ───────────── side panel → worker ───────────── */
 
@@ -116,6 +116,20 @@ export interface RunState {
   skipped?: FrameExtract["skipped"];
   usage?: { input: number; output: number; cacheRead: number; cacheWrite: number };
   error?: { kind: string; message: string };
+  /** A plain note for the review, such as why on-device AI was not used. */
+  notice?: string;
 }
+
+/* ───────────── worker → side panel ───────────── */
+
+/** Run the browser's built-in model where it exists (the side panel); the worker may not have it. */
+export interface OnDeviceRequest {
+  type: "FP_ONDEVICE_FILL";
+  profile: Profile;
+  resume: Resume;
+  page: PageContext;
+  fields: Omit<FieldDescriptor, "currentValue">[];
+}
+export type OnDeviceReply = { ok: true; response: FillResponse } | { ok: false; error: string };
 
 export const runKey = (tabId: number) => `fp:run:${tabId}`;

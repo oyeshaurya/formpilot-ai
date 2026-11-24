@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { factScore, ruleFill } from "../src/background/rules";
+import { factScore, ruleFill, schoolScoresFromResume } from "../src/background/rules";
 import type { RequestField } from "../src/background/prompt";
 import { emptyProfile } from "../src/shared/schema";
 
@@ -102,5 +102,109 @@ describe("saved-answer matching", () => {
   });
   it("does not match unrelated questions", () => {
     expect(factScore("Why do you want to join", "Describe your biggest failure")).toBeLessThan(0.6);
+  });
+});
+
+describe("one fact per field", () => {
+  const p = () => {
+    const x = profile();
+    x.personal.dateOfBirth = "2004-05-17";
+    x.personal.fatherName = "Rakesh Verma";
+    x.education.degree = "B.Tech";
+    x.education.grade = "8.9";
+    return x;
+  };
+  const value = (field: RequestField) => {
+    const r = ruleFill(p(), [field]);
+    return r.mappings[0]?.value ?? `unmapped: ${r.unmapped[0]?.reason}`;
+  };
+  it("never puts a full name in Middle name", () => expect(value(f("m", "Middle name"))).toMatch(/^unmapped: Not in your profile: middle name/));
+  it("never copies the main phone into Alternate phone", () => expect(value(f("a", "Alternate phone number"))).toMatch(/^unmapped/));
+  it("fills date of birth and father's name", () => {
+    expect(value(f("d", "Date of birth", { kind: "date" }))).toBe("2004-05-17");
+    expect(value(f("fa", "Father's name"))).toBe("Rakesh Verma");
+    expect(value(f("fo", "Father's occupation"))).toMatch(/^unmapped/);
+  });
+  it("uses CGPA for the degree but not for Class 10 marks", () => {
+    expect(value(f("g", "CGPA / Percentage"))).toBe("8.9");
+    expect(value(f("c", "Class 10: Percentage / CGPA"))).toMatch(/^unmapped: Not in your profile: Class 10 marks/);
+  });
+  it("infers highest qualification from the degree when not set", () => expect(value(f("h", "Highest qualification"))).toBe("B.Tech"));
+  it("keeps the bare-name rule off other names", () => {
+    expect(value(f("n", "Full name"))).toBe("Shaurya Verma");
+    expect(value(f("b", "Class 10: Board name"))).toMatch(/^unmapped/);
+    expect(value(f("e", "Name of current employer"))).not.toBe("Shaurya Verma");
+  });
+  it("ticks a combined option when either skill is yours", () => {
+    const r = ruleFill(p(), [
+      f("s", "Which languages and tools are you comfortable with?", {
+        kind: "checkbox-group",
+        options: ["JavaScript / TypeScript", "Java", "Node.js"].map((v) => ({ value: v, label: v })),
+      }),
+    ]);
+    expect(r.mappings[0]!.values).toEqual(["JavaScript / TypeScript"]);
+  });
+});
+
+describe("Aadhaar fact names", () => {
+  const field: RequestField = { id: "a", kind: "text", label: "Aadhaar number", required: true, localOnly: true };
+  for (const label of ["Aadhaar Card", "Aadhar", "UID", "My ID"]) {
+    it(`fills from a fact named “${label}”`, () => {
+      const p = profile();
+      p.customFacts.push({ id: "x", label, value: "538942581375" });
+      expect(ruleFill(p, [field]).mappings[0]?.value).toBe("538942581375");
+    });
+  }
+  it("never uses a non-Aadhaar fact for it", () => {
+    const p = profile();
+    p.customFacts.push({ id: "x", label: "Aadhaar Card", value: "not a number" });
+    p.customFacts = p.customFacts.filter((x) => x.id !== "x").concat({ id: "y", label: "PAN", value: "ABCDE1234F" });
+    expect(ruleFill(p, [field]).mappings).toHaveLength(0);
+  });
+  it("matches Aadhaar card to Aadhaar number for ordinary facts too", () => expect(factScore("Aadhaar Card", "Aadhaar number")).toBe(1));
+});
+
+describe("Indian address forms", () => {
+  const p = () => {
+    const x = profile();
+    x.address.street = "G101, G block, Abode Valley";
+    x.address.district = "Chengalpattu";
+    x.address.postalCode = "603203";
+    return x;
+  };
+  const value = (field: RequestField) => ruleFill(p(), [field]).mappings[0]?.value;
+  it("fills district and PIN code", () => {
+    expect(value(f("d", "District"))).toBe("Chengalpattu");
+    expect(value(f("p", "PIN code"))).toBe("603203");
+    expect(value(f("p2", "Pincode"))).toBe("603203");
+  });
+  it("fills a multi-line street box, but not 'if different'", () => {
+    expect(value(f("s", "House no. / Street / Locality", { kind: "textarea" }))).toBe("G101, G block, Abode Valley");
+    expect(value(f("c", "Correspondence address (if different)", { kind: "textarea" }))).toBeUndefined();
+  });
+});
+
+describe("Class 10 and Class 12", () => {
+  const resume = { markdown: "## Education\nDelhi Public School, Greater Noida 2021 - 2023\nClass X: 95.8%\nClass XII: 80.6%", updatedAt: "" };
+  const value = (label: string, p = profile()) => {
+    const r = ruleFill(p, [f("x", label)], resume);
+    return r.mappings[0] ? `${r.mappings[0].value} (${r.mappings[0].reasoning})` : `unmapped: ${r.unmapped[0]?.reason}`;
+  };
+  it("reads marks from the resume when the profile has none", () => {
+    expect(schoolScoresFromResume(resume.markdown)).toEqual({ "10": "95.8%", "12": "80.6%" });
+    expect(value("Class 10: Percentage / CGPA")).toBe("95.8% (From your resume: Class 10 marks)");
+    expect(value("12th percentage")).toBe("80.6% (From your resume: Class 12 marks)");
+  });
+  it("prefers the profile, and never guesses a board or year from the resume", () => {
+    const p = profile();
+    p.education.class10Board = "CBSE";
+    p.education.class12Score = "81%";
+    expect(value("Class 10: Board name", p)).toBe("CBSE (From your profile: Class 10 board)");
+    expect(value("Class 12: Percentage / CGPA", p)).toBe("81% (From your profile: Class 12 marks)");
+    expect(value("Class 12: Year of passing", p)).toMatch(/^unmapped: Not in your profile: Class 12 year of passing/);
+  });
+  it("reads other ways resumes write it", () => {
+    expect(schoolScoresFromResume("SSC - 9.2 CGPA\nHSC: 88 %")).toEqual({ "10": "9.2 CGPA", "12": "88 %" });
+    expect(schoolScoresFromResume("10th (CBSE): 91%\n12th (CBSE): 85.4%")).toEqual({ "10": "91%", "12": "85.4%" });
   });
 });

@@ -3,6 +3,7 @@ import type { Profile } from "../../shared/schema";
 import { saveProfile } from "../../shared/storage";
 import { cleanProfile, validateProfile, type FieldErrors } from "../../shared/validate";
 import { ActionBar, Button, Row, Section, SelectField, StatusLine, TextArea, TextField, type Tone } from "../components/ui";
+import { useKeptDraft } from "../hooks/useKeptDraft";
 import { timeAgo } from "../hooks/useVault";
 
 type Group = "personal" | "address" | "links" | "work" | "education";
@@ -16,15 +17,19 @@ interface FieldDef {
   inputMode?: "text" | "email" | "tel" | "url" | "numeric" | "decimal";
   placeholder?: string;
   hint?: string;
-  choice?: "yesno";
+  choice?: keyof typeof CHOICES;
   multiline?: boolean;
 }
 
-const YES_NO = [
-  { value: "", label: "Not set" },
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-] as const;
+const NOT_SET = { value: "", label: "Not set" };
+const CHOICES = {
+  yesno: [NOT_SET, { value: "yes", label: "Yes" }, { value: "no", label: "No" }],
+  gender: [NOT_SET, ...["Male", "Female", "Non-binary", "Prefer not to say"].map((v) => ({ value: v, label: v }))],
+  qualification: [
+    NOT_SET,
+    ...["High school", "Diploma", "Bachelor's degree", "Master's degree", "Doctorate (PhD)"].map((v) => ({ value: v, label: v.replace("'", "’") })),
+  ],
+} as const;
 
 /** Layout: each inner array is one row (one or two fields). */
 const SECTIONS: { group: Group; title: string; description?: string; rows: FieldDef[][] }[] = [
@@ -35,14 +40,34 @@ const SECTIONS: { group: Group; title: string; description?: string; rows: Field
     rows: [
       [
         { group: "personal", key: "firstName", label: "First name", autoComplete: "given-name" },
-        { group: "personal", key: "lastName", label: "Last name", autoComplete: "family-name" },
+        { group: "personal", key: "middleName", label: "Middle name", autoComplete: "additional-name" },
       ],
       [
+        { group: "personal", key: "lastName", label: "Last name", autoComplete: "family-name" },
         { group: "personal", key: "preferredName", label: "Preferred name", autoComplete: "nickname" },
+      ],
+      [
+        { group: "personal", key: "dateOfBirth", label: "Date of birth", type: "date", autoComplete: "bday" },
+        { group: "personal", key: "gender", label: "Gender", choice: "gender" },
+      ],
+      [
+        { group: "personal", key: "nationality", label: "Nationality", placeholder: "Indian" },
         { group: "personal", key: "pronouns", label: "Pronouns", placeholder: "she/her" },
       ],
       [{ group: "personal", key: "email", label: "Email", type: "email", inputMode: "email", autoComplete: "email" }],
-      [{ group: "personal", key: "phone", label: "Phone", type: "tel", inputMode: "tel", autoComplete: "tel" }],
+      [
+        { group: "personal", key: "phone", label: "Phone", type: "tel", inputMode: "tel", autoComplete: "tel" },
+        { group: "personal", key: "alternatePhone", label: "Alternate phone", type: "tel", inputMode: "tel", autoComplete: "off" },
+      ],
+    ],
+  },
+  {
+    group: "personal",
+    title: "Family",
+    description: "For forms that ask for your parents’ names, such as government and college applications.",
+    rows: [
+      [{ group: "personal", key: "fatherName", label: "Father’s name" }],
+      [{ group: "personal", key: "motherName", label: "Mother’s name" }],
     ],
   },
   {
@@ -52,8 +77,9 @@ const SECTIONS: { group: Group; title: string; description?: string; rows: Field
       [{ group: "address", key: "street", label: "Street address", autoComplete: "street-address" }],
       [
         { group: "address", key: "city", label: "City", autoComplete: "address-level2" },
-        { group: "address", key: "region", label: "State or region", autoComplete: "address-level1" },
+        { group: "address", key: "district", label: "District", autoComplete: "off" },
       ],
+      [{ group: "address", key: "region", label: "State or region", autoComplete: "address-level1" }],
       [
         { group: "address", key: "postalCode", label: "Postal code", autoComplete: "postal-code" },
         { group: "address", key: "country", label: "Country", autoComplete: "country-name" },
@@ -110,7 +136,29 @@ const SECTIONS: { group: Group; title: string; description?: string; rows: Field
         { group: "education", key: "degree", label: "Degree", placeholder: "BSc" },
         { group: "education", key: "fieldOfStudy", label: "Field of study" },
       ],
-      [{ group: "education", key: "graduationYear", label: "Graduation year", inputMode: "numeric", placeholder: "2024" }],
+      [
+        { group: "education", key: "graduationYear", label: "Graduation year", inputMode: "numeric", placeholder: "2024" },
+        { group: "education", key: "grade", label: "CGPA or percentage", placeholder: "8.9 / 10" },
+      ],
+      [{ group: "education", key: "highestQualification", label: "Highest qualification", choice: "qualification" }],
+    ],
+  },
+  {
+    group: "education",
+    title: "School (Class 10 and 12)",
+    description: "Asked by most Indian applications. Leave marks empty to use the ones in your resume.",
+    rows: [
+      [{ group: "education", key: "schoolName", label: "School name" }],
+      [{ group: "education", key: "class10Board", label: "Class 10 board", placeholder: "CBSE" }],
+      [
+        { group: "education", key: "class10Year", label: "Class 10 year", inputMode: "numeric", placeholder: "2019" },
+        { group: "education", key: "class10Score", label: "Class 10 marks", placeholder: "92%" },
+      ],
+      [{ group: "education", key: "class12Board", label: "Class 12 board", placeholder: "CBSE" }],
+      [
+        { group: "education", key: "class12Year", label: "Class 12 year", inputMode: "numeric", placeholder: "2021" },
+        { group: "education", key: "class12Score", label: "Class 12 marks", placeholder: "88.5%" },
+      ],
     ],
   },
 ];
@@ -134,6 +182,8 @@ export function ProfileView({ saved, onDirtyChange }: { saved: Profile; onDirtyC
   }, [saved]);
 
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
+  // Unsaved edits survive the popup closing (kept in session memory until saved).
+  useKeptDraft("fp:draft:profile", draft, dirty, setDraft);
 
   const edit = (fn: (d: Profile) => Profile) => {
     setDraft(fn);
@@ -188,27 +238,27 @@ export function ProfileView({ saved, onDirtyChange }: { saved: Profile; onDirtyC
         : { tone: "neutral", text: "Nothing saved yet" });
 
   return (
-    <form onSubmit={onSave} noValidate aria-labelledby="profile-title">
-      <div className="px-4 pt-5">
-        <h1 id="profile-title" className="text-[28px] leading-[1.1]">
+    <form onSubmit={onSave} noValidate aria-labelledby="profile-title" className="fp-view">
+      <div className="fp-intro">
+        <h1 id="profile-title" className="fp-title">
           Your profile
         </h1>
-        <p className="mt-2 text-[16px] text-ink">Everything is optional. Fill in what forms usually ask you.</p>
+        <p className="fp-lede">Everything is optional. Fill in what forms usually ask you.</p>
       </div>
       {SECTIONS.map((section) => (
-        <Section key={section.group} title={section.title} description={section.description}>
+        <Section key={section.title} title={section.title} description={section.description}>
           {section.rows.map((row, i) => {
             const fields = row.map((f) => {
               const path = `${f.group}.${f.key}`;
               const value = (draft[f.group] as Record<string, string>)[f.key] ?? "";
-              if (f.choice === "yesno")
+              if (f.choice)
                 return (
                   <SelectField
                     key={path}
                     id={fieldDomId(path)}
                     label={f.label}
                     value={value}
-                    options={YES_NO}
+                    options={CHOICES[f.choice]}
                     onChange={(v) => setField(f.group, f.key, v)}
                   />
                 );
@@ -249,11 +299,13 @@ export function ProfileView({ saved, onDirtyChange }: { saved: Profile; onDirtyC
 
       <Section
         title="Other facts"
-        description="Questions applications ask that are not above, saved once and reused: why you want to join, how you heard about us, your CGPA, an ID number."
+        description="Questions applications ask that are not above, saved once and reused: why you want to join, how you heard about us, your category, an ID number."
       >
-        {draft.customFacts.length === 0 && <p className="text-[16px] text-muted">No extra facts yet.</p>}
+        {draft.customFacts.length === 0 && (
+          <p className="fp-inset fp-empty border-dashed px-4 py-5 text-center">No extra facts yet.</p>
+        )}
         {draft.customFacts.map((f, i) => (
-          <fieldset key={f.id} className="fp-inset grid gap-3 p-4">
+          <fieldset key={f.id} className="fp-inset m-0 grid min-w-0 gap-3 p-4">
             <legend className="sr-only">Fact {i + 1}</legend>
             <TextField
               id={fieldDomId(`customFacts.${i}.label`)}
@@ -268,7 +320,7 @@ export function ProfileView({ saved, onDirtyChange }: { saved: Profile; onDirtyC
             />
             <TextField label="Answer" value={f.value} placeholder="A friend referred me" onChange={(v) => setFact(f.id, { value: v })} />
             <div>
-              <button type="button" className="fp-link min-h-11 text-left text-[14px] [overflow-wrap:anywhere]" onClick={() => removeFact(f.id)}>
+              <button type="button" className="fp-link min-h-11 text-left text-[13px] [overflow-wrap:anywhere]" onClick={() => removeFact(f.id)}>
                 Remove{f.label ? ` “${f.label}”` : " this fact"}
               </button>
             </div>
@@ -276,6 +328,9 @@ export function ProfileView({ saved, onDirtyChange }: { saved: Profile; onDirtyC
         ))}
         <div>
           <Button onClick={addFact} disabled={draft.customFacts.length >= 50}>
+            <svg viewBox="0 0 16 16" className="size-4 text-accent" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+              <path d="M8 3.5v9M3.5 8h9" />
+            </svg>
             Add a fact
           </Button>
         </div>

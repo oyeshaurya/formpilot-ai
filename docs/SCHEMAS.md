@@ -18,19 +18,24 @@ Run state lives in `chrome.storage.session` under `fp:run:<tabId>` (section 5).
 
 ```jsonc
 {
-  "personal":     { "firstName", "lastName", "preferredName", "pronouns", "email", "phone" },
-  "address":      { "street", "city", "region", "postalCode", "country" },
+  "personal":     { "firstName", "middleName", "lastName", "preferredName", "pronouns",
+                    "dateOfBirth": "YYYY-MM-DD", "gender", "nationality",
+                    "email", "phone", "alternatePhone", "fatherName", "motherName" },
+  "address":      { "street", "city", "district", "region", "postalCode", "country" },
   "links":        { "linkedin", "github", "portfolio", "website" },
   "work":         { "currentTitle", "currentCompany", "yearsExperience", "skills",
                     "workAuthorization", "needsSponsorship": "yes" | "no" | "",
                     "noticePeriod", "salaryExpectation", "willingToRelocate": "yes" | "no" | "" },
-  "education":    { "school", "degree", "fieldOfStudy", "graduationYear" },
+  "education":    { "school", "degree", "fieldOfStudy", "graduationYear",
+                    "highestQualification", "grade",
+                    "schoolName", "class10Board", "class10Year", "class10Score",
+                    "class12Board", "class12Year", "class12Score" },          // grade: CGPA or percentage
   "customFacts":  [{ "id", "label", "value" }],   // "How did you hear about us?: A friend", "CGPA: 8.7"
   "updatedAt":    "ISO date"
 }
 ```
 
-Deliberately absent: government IDs, passport numbers, bank or card data, passwords, date of birth. The extractor also refuses to fill such fields on a page (section 2).
+Deliberately absent: government IDs, passport numbers, bank or card data, passwords. Date of birth, gender, nationality and parents' names are optional and used only when the person fills them in. The extractor also refuses to fill such fields on a page (section 2).
 
 ## 2. DOM field extractor output (content script → service worker)
 
@@ -159,9 +164,12 @@ Source of truth: [`src/shared/messages.ts`](../src/shared/messages.ts).
 
 // on-page bar → service worker
 { type: "PAGE_UNDO_ALL" } · { type: "PAGE_DISMISS" }
+
+// service worker → side panel (on-device AI: Chrome's model is reachable from extension pages)
+{ type: "FP_ONDEVICE_FILL", profile, resume, page, fields } → { ok: true, response: FillResponse } | { ok: false, error }
 ```
 
-**Run state** (`chrome.storage.session`, key `fp:run:<tabId>`): `{ runId, tabId, url, status: "reading"|"drafting"|"filling"|"done"|"error", model, fieldCount, items: RunItem[], unmapped, skipped, usage: { input, output, cacheRead, cacheWrite }, error }`. A `RunItem` is `{ id, label, kind, value (as shown on the page), values, source, confidence, reasoning, state: "filled"|"failed"|"undone", error? }`. The side panel renders only from this, so a closed panel or a restarted worker loses nothing; navigation clears it.
+**Run state** (`chrome.storage.session`, key `fp:run:<tabId>`): `{ runId, tabId, url, status: "reading"|"drafting"|"filling"|"done"|"error", model, fieldCount, items: RunItem[], unmapped, skipped, usage: { input, output, cacheRead, cacheWrite }, error, notice? }`. `model` is a Claude id, `"basic"` or `"on-device"`; `notice` says why on-device AI fell back to Basic. A `RunItem` is `{ id, label, kind, value (as shown on the page), values, source, confidence, reasoning, state: "filled"|"failed"|"undone", error? }`. The side panel renders only from this, so a closed panel or a restarted worker loses nothing; navigation clears it.
 
 **Checks on every answer** (`src/background/mappings.ts`): unknown ids are dropped; select and radio answers must be an option (label answers are mapped to the option value); checkbox groups keep only real options; text is trimmed to `maxLength`; drafts are never "high" confidence; consent boxes are never ticked; demographic questions are never answered from a draft.
 
@@ -173,4 +181,6 @@ Source of truth: [`src/shared/messages.ts`](../src/shared/messages.ts).
 | Fast | `claude-haiku-5-5` | Contact and sign-up forms |
 | Balanced | `claude-sonnet-5-5` | Applications with short answers |
 | Best | `claude-opus-5-5` | Long essays, visa and grant portals |
+| Basic (free) | `basic` | Label rules only (src/background/rules.ts). No AI, writes no answers |
+| On-device AI (free) | `on-device` | Basic rules first, then the browser's built-in model (Chrome's Prompt API, Gemini Nano) for the fields the rules could not place, in batches of 10 with a JSON schema per batch. Values marked "profile" are kept only if they appear in the profile or resume. Falls back to Basic with a notice when the model is missing or not downloaded (src/shared/ondevice.ts) |
 | Sonnet 4.6 | `claude-sonnet-4-6` | Kept because the brief names it; Sonnet 5.5 is newer and cheaper ($2 / $10 vs $3 / $15 per million tokens) |

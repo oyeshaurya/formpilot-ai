@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Job Application (Google Forms structure)</title>
+    <style>
+      body { font: 16px/1.4 system-ui, sans-serif; background: #f0ebf8; margin: 0; padding: 24px; }
+      [role="listitem"].q { background: #fff; border-radius: 8px; padding: 20px; margin: 0 0 12px; max-width: 640px; }
+      [role="heading"] { font-weight: 500; margin-bottom: 12px; }
+      [role="checkbox"], [role="radio"] { display: inline-block; width: 18px; height: 18px; border: 2px solid #5f6368; vertical-align: middle; cursor: pointer; }
+      [role="radio"] { border-radius: 50%; }
+      [aria-checked="true"] { background: #673ab7; }
+      [role="list"] [role="listitem"] { margin: 6px 0; }
+      [role="listbox"] { display: inline-block; min-width: 160px; border: 1px solid #dadce0; padding: 8px 12px; cursor: pointer; position: relative; }
+      .closed > [role="option"] { display: none; }
+      .closed > [role="option"][aria-selected="true"] { display: block; }
+      .popup { position: absolute; top: 100%; left: 0; background: #fff; box-shadow: 0 2px 8px #0003; z-index: 2; }
+      .popup [role="option"] { display: block; padding: 6px 12px; }
+    </style>
+  </head>
+  <body>
+    <!--
+      Mirrors the ARIA structure of a Google Forms page: each question is a role=listitem with one
+      role=heading; drop-downs are role=listbox with role=option children carrying data-value, which
+      open a pop-up copy of the options on click; checkbox options are role=checkbox inside their own
+      nested list items; multiple choice is role=radiogroup with role=radio children.
+    -->
+    <div role="list" id="form">
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-first">First name <span aria-label="Required question">*</span></div>
+        <input type="text" id="first" aria-labelledby="h-first" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-middle">Middle name</div>
+        <input type="text" id="middle" aria-labelledby="h-middle" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-last">Last name</div>
+        <input type="text" id="last" aria-labelledby="h-last" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-dob">Date of birth</div>
+        <div id="sub-dob">Date</div><input type="date" id="dob" aria-labelledby="sub-dob" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-gender">Gender</div>
+        <div role="radiogroup" id="gender" aria-labelledby="h-gender">
+          <div><div role="radio" aria-checked="false" aria-label="Male" data-value="Male"></div> <span>Male</span></div>
+          <div><div role="radio" aria-checked="false" aria-label="Female" data-value="Female"></div> <span>Female</span></div>
+          <div><div role="radio" aria-checked="false" aria-label="Other:" data-value="__other_option__"></div> <span>Other:</span></div>
+        </div></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-nat">Nationality</div>
+        <div role="listbox" id="nat" class="closed" aria-labelledby="h-nat" aria-expanded="false">
+          <div role="option" data-value="" aria-selected="true">Choose</div>
+          <div role="option" data-value="Indian" aria-selected="false">Indian</div>
+          <div role="option" data-value="American" aria-selected="false">American</div>
+          <div role="option" data-value="British" aria-selected="false">British</div>
+        </div></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-phone">Mobile number</div>
+        <input type="text" id="phone" aria-labelledby="h-phone" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-alt">Alternate phone number</div>
+        <input type="text" id="alt" aria-labelledby="h-alt" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-district">District <span aria-label="Required question">*</span></div>
+        <input type="text" id="district" aria-labelledby="h-district" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-pin">PIN code <span aria-label="Required question">*</span></div>
+        <input type="text" id="pin" aria-labelledby="h-pin" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-country">Country</div>
+        <div role="listbox" id="country" class="closed" aria-labelledby="h-country" aria-expanded="false">
+          <div role="option" data-value="" aria-selected="true">Choose</div>
+          <div role="option" data-value="India" aria-selected="false">India</div>
+          <div role="option" data-value="United States" aria-selected="false">United States</div>
+        </div></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3">Which languages and tools are you comfortable with?</div>
+        <div role="list" id="skills">
+          <div role="listitem"><label><div role="checkbox" aria-checked="false" aria-label="JavaScript / TypeScript" data-answer-value="JavaScript / TypeScript"></div> JavaScript / TypeScript</label></div>
+          <div role="listitem"><label><div role="checkbox" aria-checked="false" aria-label="Python" data-answer-value="Python"></div> Python</label></div>
+          <div role="listitem"><label><div role="checkbox" aria-checked="false" aria-label="Java" data-answer-value="Java"></div> Java</label></div>
+          <div role="listitem"><label><div role="checkbox" aria-checked="false" aria-label="Node.js" data-answer-value="Node.js"></div> Node.js</label></div>
+          <div role="listitem"><label><div role="checkbox" aria-checked="false" aria-label="Other:" data-answer-value="__other_option__"></div> Other:</label> <input type="text" aria-label="Other response" /></div>
+        </div></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-hq">Highest qualification</div>
+        <div role="listbox" id="hq" class="closed" aria-labelledby="h-hq" aria-expanded="false">
+          <div role="option" data-value="" aria-selected="true">Choose</div>
+          <div role="option" data-value="High school" aria-selected="false">High school</div>
+          <div role="option" data-value="Bachelor's degree" aria-selected="false">Bachelor's degree</div>
+          <div role="option" data-value="Master's degree" aria-selected="false">Master's degree</div>
+        </div></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-cgpa">CGPA / Percentage</div>
+        <input type="text" id="cgpa" aria-labelledby="h-cgpa" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-c10">Class 10: Percentage / CGPA</div>
+        <input type="text" id="c10" aria-labelledby="h-c10" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-father">Father's name</div>
+        <input type="text" id="father" aria-labelledby="h-father" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-focc">Father's occupation</div>
+        <input type="text" id="focc" aria-labelledby="h-focc" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-aad">Aadhaar number <span aria-label="Required question">*</span></div>
+        <input type="text" id="aad" aria-labelledby="h-aad" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-role">Current role</div>
+        <input type="text" id="role" aria-labelledby="h-role" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3" id="h-native">Native place</div>
+        <input type="text" id="native" aria-labelledby="h-native" /></div>
+      <div role="listitem" class="q"><div role="heading" aria-level="3">Declaration</div>
+        <div role="list"><div role="listitem"><label><div role="checkbox" id="decl" aria-checked="false" aria-label="I confirm that the information provided is true and complete." data-answer-value="I confirm that the information provided is true and complete."></div> I confirm that the information provided is true and complete.</label></div></div></div>
+    </div>
+    <script>
+      // Behaviour like Google Forms: clicks toggle checkboxes and choose radios; a drop-down opens a
+      // pop-up copy of its options, and a click on a pop-up option selects the original and closes it.
+      document.addEventListener("click", (e) => {
+        const box = e.target.closest("[role=checkbox]");
+        if (box) box.setAttribute("aria-checked", box.getAttribute("aria-checked") === "true" ? "false" : "true");
+        const radio = e.target.closest("[role=radio]");
+        if (radio) {
+          radio.closest("[role=radiogroup]").querySelectorAll("[role=radio]").forEach((r) => r.setAttribute("aria-checked", "false"));
+          radio.setAttribute("aria-checked", "true");
+        }
+        const popOpt = e.target.closest(".popup [role=option]");
+        const list = e.target.closest("[role=listbox]");
+        if (popOpt && list) {
+          const v = popOpt.getAttribute("data-value");
+          list.querySelectorAll(":scope > [role=option]").forEach((o) => o.setAttribute("aria-selected", String(o.getAttribute("data-value") === v)));
+          list.querySelector(".popup").remove();
+          list.setAttribute("aria-expanded", "false");
+          return;
+        }
+        if (list && !list.querySelector(".popup")) {
+          const pop = document.createElement("div");
+          pop.className = "popup";
+          pop.setAttribute("role", "presentation");
+          list.querySelectorAll(":scope > [role=option]").forEach((o) => pop.appendChild(o.cloneNode(true)));
+          list.appendChild(pop);
+          list.setAttribute("aria-expanded", "true");
+        }
+      });
+      window.gformState = () => ({
+        first: first.value, middle: middle.value, last: last.value, dob: dob.value, phone: phone.value, alt: alt.value,
+        cgpa: cgpa.value, aad: aad.value, district: district.value, pin: pin.value, role: role.value, native: native.value, c10: c10.value, father: father.value, focc: focc.value,
+        gender: document.querySelector("#gender [aria-checked=true]")?.getAttribute("data-value") ?? "",
+        nat: nat.querySelector(":scope > [aria-selected=true]").getAttribute("data-value"),
+        country: country.querySelector(":scope > [aria-selected=true]").getAttribute("data-value"),
+        hq: hq.querySelector(":scope > [aria-selected=true]").getAttribute("data-value"),
+        skills: [...document.querySelectorAll("#skills [aria-checked=true]")].map((b) => b.getAttribute("data-answer-value")),
+        decl: decl.getAttribute("aria-checked") === "true",
+      });
+    </script>
+  </body>
+</html>

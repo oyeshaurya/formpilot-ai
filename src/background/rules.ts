@@ -1,5 +1,5 @@
-import type { FieldMapping, FillResponse, Profile } from "../shared/schema";
-import type { RequestField } from "./prompt";
+import type { FieldMapping, FillResponse, Profile, Resume } from "../shared/schema";
+import { isLocalOnlyFact, type RequestField } from "./prompt";
 
 /**
  * Basic mode: a free, offline fill with no AI. Maps fields to the profile with
@@ -11,11 +11,14 @@ import type { RequestField } from "./prompt";
 
 type Get = (p: Profile) => string;
 
-const full = (p: Profile) => [p.personal.firstName, p.personal.lastName].filter(Boolean).join(" ");
+const full = (p: Profile) => [p.personal.firstName, p.personal.middleName, p.personal.lastName].filter(Boolean).join(" ");
 
 /** autocomplete tokens (https://html.spec.whatwg.org/#autofill-field) → profile value */
 const AUTOCOMPLETE: Record<string, [Get, string]> = {
   "given-name": [(p) => p.personal.firstName, "first name"],
+  "additional-name": [(p) => p.personal.middleName, "middle name"],
+  bday: [(p) => p.personal.dateOfBirth, "date of birth"],
+  sex: [(p) => p.personal.gender, "gender"],
   "family-name": [(p) => p.personal.lastName, "last name"],
   name: [full, "full name"],
   nickname: [(p) => p.personal.preferredName, "preferred name"],
@@ -34,20 +37,31 @@ const AUTOCOMPLETE: Record<string, [Get, string]> = {
   url: [(p) => p.links.website || p.links.portfolio, "website"],
 };
 
+/** Questions about school (Class 10 / 12) rather than the degree. */
+const SCHOOL_LEVEL = /\b(class|std|standard)\s*(x|xii|10|12)\b|\b(10th|12th|ssc|hsc|matric\w*|high school|secondary school)\b/i;
+
 /** Label rules, most specific first. */
 const LABELS: [RegExp, Get, string][] = [
+  [/\bfather'?s?\b.*\bname\b/i, (p) => p.personal.fatherName, "father's name"],
+  [/\bmother'?s?\b.*\bname\b/i, (p) => p.personal.motherName, "mother's name"],
   [/\b(first|given|fore)\s*name\b/i, (p) => p.personal.firstName, "first name"],
+  [/\bmiddle\s*(name|initial)\b/i, (p) => p.personal.middleName, "middle name"],
   [/\b(last|family|sur)\s*name\b|\bsurname\b/i, (p) => p.personal.lastName, "last name"],
   [/\b(preferred|nick)\s*name\b|\bgo by\b/i, (p) => p.personal.preferredName || p.personal.firstName, "preferred name"],
   [/\bpronouns?\b/i, (p) => p.personal.pronouns, "pronouns"],
-  [/\b(full\s*)?name\b/i, full, "full name"],
+  [/\b(date of birth|birth\s*date|d\.?o\.?b)\b/i, (p) => p.personal.dateOfBirth, "date of birth"],
+  [/\b(gender|sex)\b/i, (p) => p.personal.gender, "gender"],
+  [/\b(nationality|citizenship)\b/i, (p) => p.personal.nationality, "nationality"],
   [/\be-?mail\b/i, (p) => p.personal.email, "email"],
+  // Before "phone": a second number is never the main one.
+  [/\b(alternate|alternative|secondary|second|other|additional|backup)\b.*\b(phone|mobile|number|contact)\b/i, (p) => p.personal.alternatePhone, "alternate phone"],
   [/\b(phone|mobile|cell|telephone|contact number|whatsapp)\b/i, (p) => p.personal.phone, "phone"],
   [/\blinked\s*in\b/i, (p) => p.links.linkedin, "LinkedIn"],
   [/\bgit\s*hub\b/i, (p) => p.links.github, "GitHub"],
   [/\bportfolio\b/i, (p) => p.links.portfolio || p.links.website, "portfolio"],
   [/\b(personal\s*)?(website|homepage|blog|url)\b/i, (p) => p.links.website || p.links.portfolio, "website"],
   [/\b(street|address line|address 1|mailing address)\b|^address$/i, (p) => p.address.street, "street address"],
+  [/\bdistrict\b/i, (p) => p.address.district, "district"],
   [/\b(city|town|locality)\b/i, (p) => p.address.city, "city"],
   [/\b(state|province|region|county)\b/i, (p) => p.address.region, "state or region"],
   [/\b(zip|postal|post)\s*code\b|\bpostcode\b|\bpin\s*code\b/i, (p) => p.address.postalCode, "postal code"],
@@ -58,11 +72,20 @@ const LABELS: [RegExp, Get, string][] = [
   [/\bnotice\s*period\b|\bavailable to start\b/i, (p) => p.work.noticePeriod, "notice period"],
   [/\b(salary|compensation|ctc|pay)\b.*\b(expect|desired)|\b(expected|desired)\s*(salary|compensation|ctc)\b/i, (p) => p.work.salaryExpectation, "salary expectation"],
   [/\bskills?\b/i, (p) => p.work.skills, "skills"],
-  [/\b(school|university|college|institution|alma mater)\b/i, (p) => p.education.school, "school"],
-  [/\b(field of study|major|discipline|speciali[sz]ation)\b/i, (p) => p.education.fieldOfStudy, "field of study"],
+  [/\b(school|university|college|institut\w*|alma mater)\b/i, (p) => p.education.school, "school"],
+  [/\b(field of study|major|discipline|speciali[sz]ation|branch)\b/i, (p) => p.education.fieldOfStudy, "field of study"],
+  [/\bhighest\b.*\b(qualification|education|degree)\b|\beducation(al)?\s*(level|qualification)\b/i, (p) => p.education.highestQualification || p.education.degree, "highest qualification"],
   [/\bdegree\b|\bqualification\b/i, (p) => p.education.degree, "degree"],
   [/\bgraduat(ion|ed|e)\b.*\b(year|date)\b|\byear of (graduation|passing)\b/i, (p) => p.education.graduationYear, "graduation year"],
+  [/\b(c?gpa|cpi|sgpa|percentage|aggregate|marks)\b/i, (p) => p.education.grade, "CGPA or percentage"],
+  // Last: a bare "Name" or "Full name", never "Name of employer" or "Board name".
+  [/^(your\s+|applicant'?s?\s+|candidate'?s?\s+)?(full\s+|legal\s+|complete\s+)?name\b(?!\s+of\b)/i, full, "full name"],
 ];
+
+const EDUCATION = new Set(["school", "degree", "field of study", "graduation year", "CGPA or percentage", "highest qualification"]);
+
+/** "Node.js", "node js" and "NodeJS" compare equal. */
+const skillKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9+#]/g, "");
 
 /** Yes/no questions answered by profile flags. */
 const YES_NO: [RegExp, (p: Profile) => "yes" | "no" | "", string][] = [
@@ -75,7 +98,8 @@ const NOT_ABOUT_YOU =
   /\b(emergency|reference|referee|referr\w*|spouse|partner'?s|parent|guardian|father|mother|manager|supervisor|recruiter|billing|shipping|card ?holder)\b/i;
 const NOT_RESIDENCE = /\b(birth|citizen\w*|nationality|passport|issu\w*|origin)\b/i;
 
-const STOP = new Set(["the", "you", "your", "are", "for", "and", "what", "how", "with", "this", "that", "please", "our", "have", "why", "who", "did", "does"]);
+// "card", "number" and "enter" say how an ID is asked for, not which one: "Aadhaar card" = "Aadhaar number".
+const STOP = new Set(["the", "you", "your", "are", "for", "and", "what", "how", "with", "this", "that", "please", "our", "have", "why", "who", "did", "does", "card", "number", "enter"]);
 const words = (s: string) =>
   new Set(
     s
@@ -110,7 +134,51 @@ function pickOption(field: RequestField, value: string): string | null {
 
 const isOpenQuestion = (f: RequestField) => f.kind === "textarea" || f.kind === "contenteditable" || /\?/.test(f.label);
 
-export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse {
+/* ───────────── Class 10 and Class 12 ───────────── */
+
+const LEVEL_10 = /\b(class|std\.?|standard)\s*(x|10)\b|\b(10th|ssc|matric\w*|secondary school)\b/i;
+const LEVEL_12 = /\b(class|std\.?|standard)\s*(xii|12)\b|\b(12th|hsc|intermediate|senior secondary|higher secondary)\b/i;
+
+export function schoolLevel(label: string): "10" | "12" | null {
+  if (LEVEL_12.test(label)) return "12";
+  if (LEVEL_10.test(label)) return "10";
+  return null;
+}
+
+/**
+ * Class 10 / 12 marks as a resume states them: "Class X: 95.8%", "12th - 80.6 %", "SSC: 9.2 CGPA".
+ * Only marks are read; a board or a year is never guessed from a resume.
+ */
+export function schoolScoresFromResume(md: string): { "10"?: string; "12"?: string } {
+  const out: { "10"?: string; "12"?: string } = {};
+  const re = /\b(?:class|std\.?|standard)\s*(xii|x|12|10)(?:th)?\b|\b(12th|10th|hsc|ssc)\b/gi;
+  for (const m of md.matchAll(re)) {
+    const tag = (m[1] ?? m[2] ?? "").toLowerCase();
+    const level = /^(xii|12|12th|hsc)$/.test(tag) ? "12" : "10";
+    if (out[level]) continue;
+    const after = md.slice(m.index! + m[0].length, m.index! + m[0].length + 40).split("\n")[0]!;
+    const score = after.match(/^[^\d\n]{0,20}?(\d{1,3}(?:\.\d{1,2})?\s*(?:%|\/\s*10\b|cgpa\b)?)/i)?.[1]?.trim();
+    if (score) out[level] = score;
+  }
+  return out;
+}
+
+function schoolAnswer(profile: Profile, resume: Resume | undefined, level: "10" | "12", label: string) {
+  const e = profile.education;
+  const cls = `Class ${level}`;
+  if (/\bboard\b/i.test(label)) return { value: level === "10" ? e.class10Board : e.class12Board, what: `${cls} board`, fromResume: false };
+  if (/\b(percent\w*|c?gpa|marks|score|grade|aggregate|result)\b|%/i.test(label)) {
+    const saved = level === "10" ? e.class10Score : e.class12Score;
+    if (saved) return { value: saved, what: `${cls} marks`, fromResume: false };
+    const fromResume = resume ? schoolScoresFromResume(resume.markdown)[level] : undefined;
+    return { value: fromResume ?? "", what: `${cls} marks`, fromResume: !!fromResume };
+  }
+  if (/\b(year|passing|passed|completion)\b/i.test(label)) return { value: level === "10" ? e.class10Year : e.class12Year, what: `${cls} year of passing`, fromResume: false };
+  if (/\b(school|institut\w*|name)\b/i.test(label)) return { value: e.schoolName, what: "school name", fromResume: false };
+  return null;
+}
+
+export function ruleFill(profile: Profile, fields: RequestField[], resume?: Resume): FillResponse {
   const mappings: FieldMapping[] = [];
   const unmapped: FillResponse["unmapped"] = [];
   const map = (f: RequestField, value: string, confidence: FieldMapping["confidence"], why: string) =>
@@ -121,9 +189,10 @@ export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse
     const about = `${label} ${f.name ?? ""}`;
 
     // 1 · a saved answer whose question matches: the only way Basic mode answers open questions
-    const fact = profile.customFacts
-      .filter((x) => x.label.trim() && x.value.trim())
-      .map((x) => ({ x, score: factScore(x.label, label) }))
+    // An Aadhaar field takes your saved Aadhaar fact whatever you named it ("Aadhaar card", "UID", or just the 12 digits).
+    const candidates = profile.customFacts.filter((x) => x.label.trim() && x.value.trim() && (!f.localOnly || isLocalOnlyFact(x.label, x.value)));
+    const fact = candidates
+      .map((x) => ({ x, score: f.localOnly ? Math.max(0.9, factScore(x.label, label)) : factScore(x.label, label) }))
       .sort((a, b) => b.score - a.score)[0];
     if (fact && fact.score >= 0.6) {
       const v = f.options?.length ? pickOption(f, fact.x.value) : fact.x.value;
@@ -146,15 +215,19 @@ export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse
       continue;
     }
 
-    if (NOT_ABOUT_YOU.test(about)) {
+    // "Father's name" is yours to give; "Father's occupation" or a parent's phone is not in the profile.
+    const parentName = /\b(father|mother)'?s?\b.*\bname\b/i.test(label) && !/\b(occupation|job|contact|phone|number|e-?mail)\b/i.test(label);
+    if (NOT_ABOUT_YOU.test(about) && !parentName) {
       unmapped.push({ fieldId: f.id, reason: "About someone else: fill it yourself" });
       continue;
     }
 
-    // 2 · checkbox groups and multi-selects of skills
-    if ((f.kind === "checkbox-group" || f.kind === "multiselect") && /\b(skills?|technolog\w*|languages?|tools?)\b/i.test(label)) {
-      const mine = profile.work.skills.split(/[,;\n]/).map((s) => s.trim().toLowerCase()).filter(Boolean);
-      const values = (f.options ?? []).filter((o) => mine.includes(o.label.toLowerCase().trim())).map((o) => o.value);
+    // 2 · checkbox groups and multi-selects of skills ("JavaScript / TypeScript" counts if either is listed)
+    if ((f.kind === "checkbox-group" || f.kind === "multiselect") && /\b(skills?|technolog\w*|languages?|tools?|frameworks?)\b/i.test(label)) {
+      const mine = new Set(profile.work.skills.split(/[,;\n]/).map(skillKey).filter(Boolean));
+      const values = (f.options ?? [])
+        .filter((o) => mine.has(skillKey(o.label)) || o.label.split(/\s*(?:\/|,|&|\band\b|\bor\b)\s*/i).some((part) => mine.has(skillKey(part))))
+        .map((o) => o.value);
       if (values.length) mappings.push({ fieldId: f.id, value: "", values, source: "profile", confidence: "medium", reasoning: "From your profile: skills" });
       else unmapped.push({ fieldId: f.id, reason: "None of your skills are listed here" });
       continue;
@@ -171,8 +244,28 @@ export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse
     }
 
     // Open questions with no saved answer: Basic mode never writes text.
-    if (isOpenQuestion(f) && f.kind !== "select" && f.kind !== "radio-group") {
+    // A multi-line "House no. / Street / Locality" box is your address, not an essay.
+    const addressBox = f.kind === "textarea" && /\b(address|house|street|flat|locality)\b/i.test(label) && !/\b(if different|correspondence|previous|other)\b|\?/i.test(label);
+    if (isOpenQuestion(f) && !addressBox && f.kind !== "select" && f.kind !== "radio-group") {
       unmapped.push({ fieldId: f.id, reason: "Basic mode does not write answers. Write it yourself, or save one in Profile → Other facts." });
+      continue;
+    }
+
+    // 3b · Class 10 / Class 12 questions: their own profile fields, then marks from the resume
+    const level = schoolLevel(label);
+    if (level) {
+      const a = schoolAnswer(profile, resume, level, label);
+      if (!a) unmapped.push({ fieldId: f.id, reason: "No match in your profile" });
+      else if (!a.value) unmapped.push({ fieldId: f.id, reason: `Not in your profile: ${a.what}. Add it in Profile → School` });
+      else
+        mappings.push({
+          fieldId: f.id,
+          value: f.options?.length ? (pickOption(f, a.value) ?? a.value) : a.value,
+          values: [],
+          source: "profile",
+          confidence: a.fromResume ? "medium" : "high",
+          reasoning: a.fromResume ? `From your resume: ${a.what}` : `From your profile: ${a.what}`,
+        });
       continue;
     }
 
@@ -188,6 +281,11 @@ export function ruleFill(profile: Profile, fields: RequestField[]): FillResponse
       }
     }
     if (hit && hit[1] === "country" && NOT_RESIDENCE.test(label)) hit = undefined;
+    // "Class 10: Percentage" or "12th: Year of passing" asks about school, not the degree.
+    if (hit && EDUCATION.has(hit[1]) && SCHOOL_LEVEL.test(label)) {
+      unmapped.push({ fieldId: f.id, reason: "School marks are not in your profile: save them in Other facts" });
+      continue;
+    }
 
     if (!hit) {
       unmapped.push({ fieldId: f.id, reason: "No match in your profile" });

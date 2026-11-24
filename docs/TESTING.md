@@ -16,7 +16,7 @@ npm run e2e         # 59 checks: the real extension in headless Microsoft Edge f
 2. Load it:
    - **Chrome:** `chrome://extensions` → Developer mode on → **Load unpacked** → pick the `dist` folder.
    - **Edge:** `edge://extensions` → Developer mode on → **Load unpacked** → pick the `dist` folder.
-3. Click the FormPilot icon (pin it from the puzzle-piece menu first). The side panel opens.
+3. Click the FormPilot icon (pin it from the puzzle-piece menu first). FormPilot opens as a popup; the button beside the status pill moves it into the side panel.
 4. **Profile:** fill in at least name, email and city; **Save profile**. **Resume:** **Import PDF or Word** (or paste text), check it, **Save resume**. Sample files: `dev/fixtures/resume.pdf`, `dev/fixtures/resume.docx`.
 5. **Optional, Settings:** with no key FormPilot fills in free **Basic mode** (facts only, no drafted answers, nothing sent anywhere). For drafted answers, paste your Anthropic API key (from https://console.anthropic.com/settings/keys), **Save key**, then **Test key**. It should say the key works.
 6. Try the local test form: run `npm run harness`, open http://localhost:5174/test-form.html, then **Fill → Fill this page**.
@@ -27,6 +27,15 @@ npm run e2e         # 59 checks: the real extension in headless Microsoft Edge f
    - the panel lists every value with **Show** and **Undo**, and a "Left for you" list with reasons;
    - **Undo all** (panel or on-page bar) puts the form back; the form is never submitted.
 8. Try real sites without submitting: a public Google Form, a Greenhouse or Lever job application, a hackathon sign-up page.
+
+## Google Forms test set
+
+`dev/google-forms/create-job-application-forms.gs` builds three job application forms in your own Google account: a corporate software engineer role, a government-style recruitment form (parents' names, category, Aadhaar, PAN, bank fields) and a student internship form (parent and emergency contacts, CGPA).
+
+1. Open [script.google.com](https://script.google.com), create a new project and paste the file in.
+2. Run `createAllForms` and approve the permission prompt.
+3. Open the Execution log for the fill links.
+4. Fill each form with FormPilot and check that identity and bank fields stay empty, and that parent names, dates of birth, dropdowns, checkboxes and grids are handled. Do not submit.
 
 ## Things to know
 

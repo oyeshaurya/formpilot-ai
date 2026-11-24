@@ -13,19 +13,26 @@ import { clearOutlines, flash, outline, showBar } from "./overlay";
 
 declare global {
   interface Window {
-    __formpilot?: { version: number };
+    __formpilot?: { version: number; build?: string };
   }
 }
 
-const VERSION = 1;
+const VERSION = 2;
+const BUILD = typeof __FP_BUILD__ === "string" ? __FP_BUILD__ : "dev";
 
-if (!window.__formpilot) {
-  window.__formpilot = { version: VERSION };
+/**
+ * Injecting the same build twice is a no-op. A different build (the extension was updated or
+ * reloaded while this tab stayed open) takes over: the old copy may still be listening with old
+ * rules, so this one claims the page and every copy answers only while it is the claimed build.
+ */
+if (window.__formpilot?.build !== BUILD) {
+  window.__formpilot = { version: VERSION, build: BUILD };
 
   const toWorker = (msg: PageToWorker) => void chrome.runtime.sendMessage(msg).catch(() => {});
 
   chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
     if (!isMessage(msg) || !msg.type.startsWith("FP_")) return false;
+    if (window.__formpilot?.build !== BUILD) return false; // a newer copy owns this page now
     const m = msg as WorkerToPage;
     switch (m.type) {
       case "FP_EXTRACT": {

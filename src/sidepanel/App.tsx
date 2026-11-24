@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { Island } from "./components/Island";
 import { useActiveRun } from "./hooks/useRun";
 import { useSpatialPointer } from "./hooks/useSpatialPointer";
@@ -50,6 +50,9 @@ const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
   },
 ];
 
+/** The toolbar popup loads popup.html, which marks <html class="fp-popup">; the side panel does not. */
+const IN_POPUP = document.documentElement.classList.contains("fp-popup");
+
 export function App() {
   const vault = useVault();
   const { run } = useActiveRun();
@@ -78,57 +81,103 @@ export function App() {
   };
 
   // Arrow keys move between tabs (WAI-ARIA tabs pattern, automatic activation).
+  // Up and Down work too, for the vertical sidebar on wide panels.
   const onTabKey = (e: KeyboardEvent) => {
     const i = TABS.findIndex((t) => t.id === tab);
-    const next = ({ ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: TABS.length - 1 } as Record<string, number>)[e.key];
+    const next = (
+      { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: TABS.length - 1 } as Record<string, number>
+    )[e.key];
     if (next === undefined) return;
     e.preventDefault();
     select(TABS[(next + TABS.length) % TABS.length]!.id, true);
   };
 
+  const index = TABS.findIndex((t) => t.id === tab);
+
+  // In the popup: a button that moves FormPilot into the side panel, which stays open while you use the page.
+  const windowRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (IN_POPUP) void chrome.windows?.getCurrent().then((w) => (windowRef.current = w.id)).catch(() => undefined);
+  }, []);
+  const openSidePanel = () => {
+    const windowId = windowRef.current;
+    if (windowId === undefined || !chrome.sidePanel) return;
+    // Called straight from the click: the browser opens a side panel only inside a user gesture.
+    void chrome.sidePanel
+      .open({ windowId })
+      .then(() => window.close())
+      .catch(() => undefined);
+  };
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="fp-shell">
+      {/* The lit ground: two soft lights and a faint grid, behind every glass surface. */}
+      <div className="fp-ambient" aria-hidden="true" />
       <a
         href="#content"
-        className="sr-only z-20 rounded-[var(--r-sm)] bg-action px-4 py-3 font-medium text-action-ink focus:not-sr-only focus:absolute focus:top-2 focus:left-2"
+        className="sr-only z-30 rounded-[var(--r-sm)] bg-action px-4 py-3 font-medium text-action-ink focus:not-sr-only focus:absolute focus:top-2 focus:left-2"
       >
         Skip to content
       </a>
-      <Island run={run} />
 
-      <main id="content" tabIndex={-1} ref={panelRef} className="fp-scroll min-h-0 flex-1 scroll-pb-28 overflow-y-auto overscroll-contain outline-none">
-        {!vault.loaded || !vault.profile || !vault.resume || !vault.settings ? (
-          <p className="px-4 py-6 text-[16px] text-muted" role="status">
-            Loading your vault…
-          </p>
-        ) : (
-          <>
-            {/* Views stay mounted so drafts survive switching tabs. */}
-            <TabPanel id="fill" active={tab}>
-              <FillView
-                profile={vault.profile}
-                resume={vault.resume}
-                settings={vault.settings}
-                hasApiKey={vault.hasApiKey}
-                goTo={(id) => select(id, true)}
-              />
-            </TabPanel>
-            <TabPanel id="profile" active={tab}>
-              <ProfileView saved={vault.profile} onDirtyChange={markProfile} />
-            </TabPanel>
-            <TabPanel id="resume" active={tab} fill>
-              <ResumeView saved={vault.resume} onDirtyChange={markResume} />
-            </TabPanel>
-            <TabPanel id="settings" active={tab}>
-              <SettingsView settings={vault.settings} profile={vault.profile} resume={vault.resume} hasApiKey={vault.hasApiKey} />
-            </TabPanel>
-          </>
-        )}
-      </main>
+      <div className="fp-stage">
+        {/* The top bar floats over the content; what scrolls under it blurs and fades. */}
+        <header className={IN_POPUP ? "fp-top fp-top--popup" : "fp-top"}>
+          {/* In the popup the pill sits between an empty slot and the side panel button, so it stays centred. */}
+          {IN_POPUP && <span aria-hidden="true" />}
+          <Island run={run} />
+          {IN_POPUP && (
+            <button type="button" className="fp-iconbtn" onClick={openSidePanel} aria-label="Open in side panel" title="Open in side panel">
+              <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+                <path d="M14.5 4.5v15M17 8.5h1M17 11.5h1" />
+              </svg>
+            </button>
+          )}
+        </header>
 
-      {/* The tab ornament floats below the window. */}
-      <nav aria-label="FormPilot" className="relative z-10 shrink-0 px-3 pt-2 pb-3">
-        <div role="tablist" aria-label="FormPilot sections" className="fp-ornament" onKeyDown={onTabKey}>
+        <main id="content" tabIndex={-1} ref={panelRef} className="fp-main">
+          {!vault.loaded || !vault.profile || !vault.resume || !vault.settings ? (
+            <p className="fp-view text-[16px] text-muted" role="status">
+              Loading your vault…
+            </p>
+          ) : (
+            <>
+              {/* Views stay mounted so drafts survive switching tabs. */}
+              <TabPanel id="fill" active={tab}>
+                <FillView
+                  profile={vault.profile}
+                  resume={vault.resume}
+                  settings={vault.settings}
+                  hasApiKey={vault.hasApiKey}
+                  goTo={(id) => select(id, true)}
+                />
+              </TabPanel>
+              <TabPanel id="profile" active={tab}>
+                <ProfileView saved={vault.profile} onDirtyChange={markProfile} />
+              </TabPanel>
+              <TabPanel id="resume" active={tab} fill>
+                <ResumeView saved={vault.resume} onDirtyChange={markResume} />
+              </TabPanel>
+              <TabPanel id="settings" active={tab}>
+                <SettingsView settings={vault.settings} profile={vault.profile} resume={vault.resume} hasApiKey={vault.hasApiKey} />
+              </TabPanel>
+            </>
+          )}
+        </main>
+      </div>
+
+      {/* The dock: floats over the foot of a narrow panel, becomes a sidebar on a wide one. */}
+      <nav aria-label="FormPilot" className="fp-dock">
+        <div
+          role="tablist"
+          aria-label="FormPilot sections"
+          className="fp-tablist"
+          style={{ "--i": index } as CSSProperties}
+          onKeyDown={onTabKey}
+        >
+          {/* One cyan glass indicator slides to the open tab. */}
+          <span className="fp-tab-indicator" aria-hidden="true" />
           {TABS.map((t) => {
             const selected = t.id === tab;
             return (

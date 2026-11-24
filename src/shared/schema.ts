@@ -12,16 +12,25 @@ const yesNo = z.enum(["yes", "no", ""]).default("");
 
 export const PersonalSchema = z.object({
   firstName: str(100),
+  middleName: str(100),
   lastName: str(100),
   preferredName: str(100),
   pronouns: str(40),
+  /** YYYY-MM-DD */
+  dateOfBirth: str(10),
+  gender: str(40),
+  nationality: str(100),
   email: str(254),
   phone: str(40),
+  alternatePhone: str(40),
+  fatherName: str(150),
+  motherName: str(150),
 });
 
 export const AddressSchema = z.object({
   street: str(200),
   city: str(100),
+  district: str(100),
   region: str(100),
   postalCode: str(20),
   country: str(100),
@@ -51,6 +60,17 @@ export const EducationSchema = z.object({
   degree: str(150),
   fieldOfStudy: str(150),
   graduationYear: str(10),
+  highestQualification: str(100),
+  /** CGPA or percentage, as the person writes it: "8.9 / 10", "86%". */
+  grade: str(40),
+  /** School (Class 10 and 12), asked by most Indian applications. */
+  schoolName: str(200),
+  class10Board: str(100),
+  class10Year: str(10),
+  class10Score: str(40),
+  class12Board: str(100),
+  class12Year: str(10),
+  class12Score: str(40),
 });
 
 export const CustomFactSchema = z.object({
@@ -78,7 +98,7 @@ export const ResumeSchema = z.object({
 });
 export type Resume = z.infer<typeof ResumeSchema>;
 
-export const ModelChoiceSchema = z.enum(["auto", "basic", "fast", "balanced", "best", "sonnet-4-6"]);
+export const ModelChoiceSchema = z.enum(["auto", "basic", "on-device", "fast", "balanced", "best", "sonnet-4-6"]);
 export type ModelChoice = z.infer<typeof ModelChoiceSchema>;
 
 export const SettingsSchema = z.object({

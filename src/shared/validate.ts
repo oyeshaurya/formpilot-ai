@@ -36,6 +36,13 @@ export function validateProfile(p: Profile): FieldErrors {
     e["personal.email"] = "Write an email address with an @, like name@example.com.";
   if (personal.phone && !PHONE.test(personal.phone.trim()))
     e["personal.phone"] = "Write the phone number with digits only, optionally starting with +.";
+  if (personal.alternatePhone && !PHONE.test(personal.alternatePhone.trim()))
+    e["personal.alternatePhone"] = "Write the alternate phone number with digits only, optionally starting with +.";
+  if (personal.dateOfBirth) {
+    const t = Date.parse(personal.dateOfBirth);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(personal.dateOfBirth) || Number.isNaN(t) || t > Date.now())
+      e["personal.dateOfBirth"] = "Pick your date of birth from the calendar.";
+  }
 
   for (const [key, label] of [
     ["linkedin", "LinkedIn"],
@@ -51,6 +58,8 @@ export function validateProfile(p: Profile): FieldErrors {
     e["work.yearsExperience"] = "Write years of experience as a number, like 4 or 4.5.";
   if (education.graduationYear && !YEAR.test(education.graduationYear.trim()))
     e["education.graduationYear"] = "Write the graduation year as four digits, like 2024.";
+  for (const [key, label] of [["class10Year", "Class 10"], ["class12Year", "Class 12"]] as const)
+    if (education[key] && !YEAR.test(education[key].trim())) e[`education.${key}`] = `Write the ${label} year as four digits, like 2021.`;
 
   p.customFacts.forEach((f, i) => {
     if (f.value.trim() && !f.label.trim()) e[`customFacts.${i}.label`] = "Name this fact so FormPilot knows when to use it.";

@@ -7,7 +7,10 @@ import { fakeFetch } from "./fake-claude"; // test builds only: dropped when __F
 import { checkMappings } from "./mappings";
 import { hasAnyData, planModel, type RequestField } from "./prompt";
 import { ruleFill } from "./rules";
-import { BASIC_MODEL } from "../shared/models";
+import { BASIC_MODEL, ON_DEVICE_MODEL } from "../shared/models";
+import type { OnDeviceReply, OnDeviceRequest } from "../shared/messages";
+import type { FillResponse } from "../shared/schema";
+import { groundMappings, onDeviceFill } from "../shared/ondevice";
 
 /**
  * One fill, start to finish. Stateless across worker restarts: every step is
@@ -88,8 +91,9 @@ export async function startFill(tabId: number, opts: { engine?: "basic" } = {}):
     return { ok: false, kind: "busy", error: "FormPilot is already filling this page." };
 
   const [apiKey, profile, resume, settings] = await Promise.all([getApiKey(), getProfile(), getResume(), getSettings()]);
-  // Basic mode (free, no AI) when chosen, asked for, or when there is no key to call Claude with.
-  const basic = opts.engine === "basic" || settings.model === "basic" || !apiKey;
+  // On-device AI when chosen (free, no key). Basic mode (no AI) when chosen, asked for, or with no key for Claude.
+  const onDevice = settings.model === "on-device" && opts.engine !== "basic";
+  const basic = !onDevice && (opts.engine === "basic" || settings.model === "basic" || !apiKey);
   if (!hasAnyData(profile, resume)) return { ok: false, kind: "no-profile", error: "Add your details in Profile first." };
 
   const frames = await inject(tabId);
@@ -106,14 +110,14 @@ export async function startFill(tabId: number, opts: { engine?: "basic" } = {}):
     unmapped: [],
   };
   await putRun(run);
-  void runFill(run, frames, { apiKey, basic, profile, resume, settings });
+  void runFill(run, frames, { apiKey, basic, onDevice, profile, resume, settings });
   return { ok: true };
 }
 
 async function runFill(
   run: RunState,
   frames: number[],
-  ctx: { apiKey: string; basic: boolean; profile: Awaited<ReturnType<typeof getProfile>>; resume: Awaited<ReturnType<typeof getResume>>; settings: Awaited<ReturnType<typeof getSettings>> },
+  ctx: { apiKey: string; basic: boolean; onDevice: boolean; profile: Awaited<ReturnType<typeof getProfile>>; resume: Awaited<ReturnType<typeof getResume>>; settings: Awaited<ReturnType<typeof getSettings>> },
 ): Promise<void> {
   holdOpen(true);
   try {
@@ -153,10 +157,31 @@ async function runFill(
     const localFields = requestFields.filter((f) => f.localOnly);
     const remoteFields = requestFields.filter((f) => !f.localOnly);
     let response;
-    if (ctx.basic || !remoteFields.length) {
+    if (ctx.onDevice) {
+      // Rules first (exact and instant), then the built-in model only for what the rules could not place.
+      const rules = ruleFill(ctx.profile, requestFields, ctx.resume);
+      const gapIds = new Set(rules.unmapped.filter((u) => ON_DEVICE_GAP.test(u.reason)).map((u) => u.fieldId));
+      const gaps = remoteFields.filter((f) => gapIds.has(f.id));
+      run.model = ON_DEVICE_MODEL;
+      await putRun(run);
+      let ai: FillResponse = { mappings: [], unmapped: [] };
+      if (gaps.length) {
+        try {
+          ai = groundMappings(gaps, await askOnDevice({ profile: ctx.profile, resume: ctx.resume, page, fields: gaps }), ctx.profile, ctx.resume);
+        } catch (err) {
+          run.model = BASIC_MODEL;
+          run.notice = `On-device AI was not used (${err instanceof Error ? err.message : "not available"}). Filled with Basic rules.`;
+        }
+      }
+      const answered = new Set([...ai.mappings, ...ai.unmapped].map((x) => x.fieldId));
+      response = {
+        mappings: [...rules.mappings, ...ai.mappings],
+        unmapped: [...rules.unmapped.filter((u) => !answered.has(u.fieldId)), ...ai.unmapped],
+      };
+    } else if (ctx.basic || !remoteFields.length) {
       run.model = ctx.basic ? BASIC_MODEL : run.model ?? BASIC_MODEL;
       await putRun(run);
-      response = ruleFill(ctx.profile, requestFields);
+      response = ruleFill(ctx.profile, requestFields, ctx.resume);
     } else {
       const plan = planModel(ctx.settings, remoteFields);
       run.model = plan.model;
@@ -165,7 +190,7 @@ async function runFill(
       const result = await requestFill({ apiKey: ctx.apiKey, plan, profile: ctx.profile, resume: ctx.resume, page, fields: remoteFields, fetchImpl });
       run.model = result.model;
       run.usage = result.usage;
-      const local = ruleFill(ctx.profile, localFields);
+      const local = ruleFill(ctx.profile, localFields, ctx.resume);
       response = { mappings: [...result.response.mappings, ...local.mappings], unmapped: [...result.response.unmapped, ...local.unmapped] };
     }
 
@@ -236,6 +261,24 @@ async function runFill(
   } finally {
     holdOpen(false);
   }
+}
+
+/**
+ * Basic-mode outcomes the on-device model may still answer: no rule matched, an open
+ * question, an option name that differs, or education and work facts that may be in the
+ * resume. Deliberate refusals ("About someone else", "Needs your own decision", an empty
+ * middle name) never go to the model.
+ */
+const ON_DEVICE_GAP =
+  /No match in your profile|does not write answers|is not one of the options|None of your skills|Not in your profile: (Class|school name|CGPA|graduation|degree|school|field of study|highest|current|years|skills|notice)/;
+
+/** Run the built-in model here if the worker has it, otherwise in the open side panel. */
+async function askOnDevice(req: Omit<OnDeviceRequest, "type">): Promise<FillResponse> {
+  if ((globalThis as { LanguageModel?: unknown }).LanguageModel) return onDeviceFill(req);
+  const reply = (await chrome.runtime.sendMessage({ type: "FP_ONDEVICE_FILL", ...req } satisfies OnDeviceRequest).catch(() => null)) as OnDeviceReply | null;
+  if (!reply) throw new Error("keep FormPilot open (the popup or the side panel) while it fills");
+  if (!reply.ok) throw new Error(reply.error);
+  return reply.response;
 }
 
 /** "1234 5678 9012" → "XXXX XXXX 9012" */

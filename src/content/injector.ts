@@ -1,5 +1,5 @@
 import type { ApplyItem, ApplyReport } from "../shared/messages";
-import { ID_ATTR, findAll, findField } from "./extractor";
+import { ID_ATTR, ariaName, findAll, findField, listboxOptions } from "./extractor";
 
 /**
  * Framework-safe value injection.
@@ -72,10 +72,13 @@ type Snapshot =
   | { type: "value"; el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement; prev: string }
   | { type: "multi"; el: HTMLSelectElement; prev: boolean[] }
   | { type: "checks"; els: { el: HTMLInputElement; prev: boolean }[] }
-  | { type: "aria"; els: { el: Element; prev: boolean }[] }
+  /** toggle: checkboxes, which a click turns off again; radios only ever re-select the old choice. */
+  | { type: "aria"; toggle?: boolean; els: { el: Element; prev: boolean }[] }
+  | { type: "listbox"; el: Element; prev: string }
   | { type: "html"; el: HTMLElement; prev: string };
 
 const snapshots = new Map<string, Snapshot>();
+let listboxUndo: Promise<boolean> = Promise.resolve(true);
 
 function snapshot(id: string, s: Snapshot): void {
   // Keep the first snapshot: a second fill must still undo to what the user had.
@@ -166,22 +169,51 @@ async function write(id: string, item: ApplyItem): Promise<string | null> {
     return null;
   }
 
-  // ARIA checkbox / radiogroup
+  // ARIA checkbox, single or a group sharing one id (Google Forms)
   if (el.getAttribute("role") === "checkbox") {
+    const isOn = (b: Element) => b.getAttribute("aria-checked") === "true";
+    snapshot(id, { type: "aria", toggle: true, els: els.map((b) => ({ el: b, prev: isOn(b) })) });
+    if (els.length > 1 || item.values.length) {
+      const wanted = (item.values.length ? item.values : item.value.split(/\s*,\s*/)).map(norm).filter(Boolean);
+      let missed = 0;
+      for (const b of els) {
+        const names = [ariaName(b), b.getAttribute("aria-label") ?? "", b.textContent ?? ""].map(norm);
+        if (wanted.some((w) => names.includes(w)) && !isOn(b)) {
+          press(b);
+          if (!isOn(b)) missed++;
+        }
+      }
+      return missed ? "Some boxes did not take the tick. Check them on the page." : null;
+    }
     const want = truthy(item.value);
-    const now = el.getAttribute("aria-checked") === "true";
-    snapshot(id, { type: "aria", els: [{ el, prev: now }] });
-    if (now !== want) press(el);
+    if (isOn(el) !== want) press(el);
     return null;
   }
   if (el.getAttribute("role") === "radiogroup") {
     const radios = Array.from(el.querySelectorAll("[role='radio']"));
-    const opts = radios.map((r) => ({ value: norm(r.textContent ?? ""), label: norm(r.getAttribute("aria-label") ?? r.textContent ?? ""), r }));
-    const hit = matchOption(opts, item.value);
+    const opts = radios.map((r) => ({
+      value: norm(r.getAttribute("data-value") || r.textContent || ""),
+      label: norm(r.getAttribute("aria-label") || r.textContent || ""),
+      r,
+    }));
+    const hit = matchOption(
+      opts.filter((o) => o.value || o.label),
+      item.value,
+    );
     if (!hit) return `No option matches “${item.value}”.`;
     snapshot(id, { type: "aria", els: radios.map((r) => ({ el: r, prev: r.getAttribute("aria-checked") === "true" })) });
     press(hit.r);
     return null;
+  }
+
+  // ARIA drop-down (Google Forms): open it, then click the option
+  if (el.getAttribute("role") === "listbox") {
+    const opts = listboxOptions(el);
+    const hit = matchOption(opts, item.value);
+    if (!hit) return `No option matches “${item.value}”.`;
+    const before = opts.find((o) => o.el.getAttribute("aria-selected") === "true")?.value ?? "";
+    snapshot(id, { type: "listbox", el, prev: before });
+    return (await pickListbox(el, hit.value)) ? null : `Could not choose “${hit.label}”. Pick it on the page.`;
   }
 
   // Select
@@ -271,6 +303,39 @@ async function write(id: string, item: ApplyItem): Promise<string | null> {
 }
 
 /** After typing into a combobox, wait for its list and click the best option. */
+const shown = (e: Element) => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden";
+
+/**
+ * Choose an option of an ARIA listbox by its data value ("" is the empty "Choose" entry).
+ * Google Forms opens a pop-up copy of the options on click and takes the choice from that
+ * copy, so: open, wait for a visible option with the value, click it, then confirm.
+ */
+async function pickListbox(box: Element, value: string): Promise<boolean> {
+  const selected = () => box.querySelector("[role='option'][aria-selected='true']")?.getAttribute("data-value") ?? "";
+  if (selected() === value) return true;
+  const byValue = () =>
+    Array.from(document.querySelectorAll("[role='option']")).filter(
+      (o) => (o.getAttribute("data-value") ?? norm(o.textContent ?? "")) === value && (box.contains(o) || box.getAttribute("aria-expanded") === "true"),
+    );
+  press(box);
+  for (let attempt = 0; attempt < 8; attempt++) {
+    await wait(120);
+    const target = byValue().filter(shown).pop(); // the pop-up copy is the last one in the DOM
+    if (!target) continue;
+    press(target);
+    await wait(250);
+    if (selected() === value) return true;
+  }
+  // No pop-up appeared: some lists take a click on the hidden option itself.
+  const hidden = byValue()[0];
+  if (hidden) {
+    press(hidden);
+    await wait(250);
+  }
+  if (box.getAttribute("aria-expanded") === "true") box.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  return selected() === value;
+}
+
 async function pickFromList(box: Element, value: string): Promise<boolean> {
   for (let attempt = 0; attempt < 6; attempt++) {
     await wait(150);
@@ -354,8 +419,15 @@ export function undo(ids?: string[]): { restored: string[]; notes: Record<string
         break;
       }
       case "aria":
-        for (const { el, prev } of s.els) if ((el.getAttribute("aria-checked") === "true") !== prev && prev) press(el);
+        for (const { el, prev } of s.els)
+          if ((el.getAttribute("aria-checked") === "true") !== prev && (prev || s.toggle)) press(el);
         break;
+      case "listbox": {
+        // Drop-downs open a pop-up each, so restore them one after another.
+        const { el, prev } = s;
+        listboxUndo = listboxUndo.then(() => pickListbox(el, prev)).catch(() => false);
+        break;
+      }
       case "html":
         s.el.innerHTML = s.prev;
         s.el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "deleteContent" }));
